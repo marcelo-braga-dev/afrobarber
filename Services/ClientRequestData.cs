@@ -1,74 +1,54 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-[System.Serializable]
-public class ClientRequestData
+[CreateAssetMenu(fileName = "ClientRequestData", menuName = "AfroBarber/Client/Request Data")]
+public class ClientRequestData : ScriptableObject
 {
-    [Header("Tabela de Preços")]
-    public ServicePriceTable priceTable;
+    [Header("Compatibilidade / Identificação")]
+    public string id;
+    public string requestId;
+    public string requestName;
+
+    [Header("Apresentação")]
+    public Sprite icon;
+
+    [TextArea(2, 5)]
+    public string description;
+
+    [Header("Tipo de Corte / Serviço")]
+    public HaircutType haircutType;
     public ServiceType serviceType = ServiceType.CorteDeCabelo;
     public string customServiceId;
+
+    [Header("Preço / Tempo / Dificuldade")]
+    public int price = 30;
+    public int servicePrice = 30;
+    public float time = 10f;
+    public float serviceTime = 10f;
+    public float serviceTimeMinutes = 10f;
+    public int difficulty = 1;
+
+    [Header("Tabela de Preços")]
+    public ServicePriceTable priceTable;
 
     [Header("Recompensas")]
     public int xpReward = 10;
 
-    [Header("Tempo")]
-    public float serviceTimeMinutes = 10f;
-
-    [Header("Visual do Cliente")]
-    public string beforeHairId;
-    public string afterHairId;    
-
-    [Header("Identificação")]
-    public string id;
-    public string requestName;
-
-    [TextArea]
-    public string description;
-
-    [Header("Visual")]
-    public Sprite icon;
-
-    [Header("Tipo")]
-    public HaircutType haircutType;
-
-    [Header("Gameplay")]
-    public int servicePrice = 30;
-    public int ServicePrice => servicePrice;
-
-    [Tooltip("Duração do atendimento em minutos do relógio global.")]
-    [Min(1f)]
-    public float serviceTime = 8f;
-    public float ServiceTime => serviceTime;
-
-    public int ServiceTimeRoundedMinutes
-    {
-        get
-        {
-            return Mathf.Max(1, Mathf.RoundToInt(serviceTime));
-        }
-    }
-
-    [Header("Dificuldade")]
-    [Range(1, 5)]
-    public int difficulty = 1;
-
     [Header("Itens necessários")]
     public List<ServiceRequirementData> requiredItems = new List<ServiceRequirementData>();
 
-    [Header("Sistema educacional")]
+    [Header("Visual do Cliente")]
+    public string beforeHairId;
+    public string afterHairId;
+
+    [Header("Educação / História")]
     public string afroCutId;
+
     [TextArea(2, 5)]
     public string educationalTitle;
-    [TextArea]
+
+    [TextArea(4, 10)]
     public string educationalSummary;
-
-    [Header("Compatibilidade com sistema novo")]
-    public string requestId;
-    public string requestTitle;
-
-    [TextArea]
-    public string requestDescription;
 
     public string RequestId
     {
@@ -77,7 +57,10 @@ public class ClientRequestData
             if (!string.IsNullOrWhiteSpace(requestId))
                 return requestId;
 
-            return id;
+            if (!string.IsNullOrWhiteSpace(id))
+                return id;
+
+            return name;
         }
     }
 
@@ -85,54 +68,65 @@ public class ClientRequestData
     {
         get
         {
-            if (!string.IsNullOrWhiteSpace(requestTitle))
-                return requestTitle;
-
             if (!string.IsNullOrWhiteSpace(requestName))
                 return requestName;
 
-            return "Atendimento";
+            if (!string.IsNullOrWhiteSpace(name))
+                return name;
+
+            return "Pedido";
         }
     }
 
-    public string Description
+    public int ServicePrice
     {
         get
         {
-            if (!string.IsNullOrWhiteSpace(requestDescription))
-                return requestDescription;
+            if (priceTable != null)
+                return priceTable.GetPrice(serviceType, customServiceId);
 
-            if (!string.IsNullOrWhiteSpace(description))
-                return description;
+            if (servicePrice > 0)
+                return servicePrice;
 
-            return requestName;
+            return Mathf.Max(0, price);
+        }
+    }
+
+    public float ServiceTime
+    {
+        get
+        {
+            if (serviceTimeMinutes > 0f)
+                return serviceTimeMinutes;
+
+            if (serviceTime > 0f)
+                return serviceTime;
+
+            return Mathf.Max(1f, time);
+        }
+    }
+
+    public int ServiceTimeRoundedMinutes
+    {
+        get
+        {
+            return Mathf.RoundToInt(ServiceTime);
         }
     }
 
     public string GetDescription()
     {
-        if (!string.IsNullOrWhiteSpace(requestDescription))
-            return requestDescription;
-
         if (!string.IsNullOrWhiteSpace(description))
             return description;
 
-        if (!string.IsNullOrWhiteSpace(requestName))
-            return requestName;
-
-        return "Atendimento sem descrição.";
-    }
-
-    public bool HasRequirements()
-    {
-        return requiredItems != null && requiredItems.Count > 0;
+        return "Cliente solicitou um atendimento.";
     }
 
     public bool HasEducationalContent()
     {
-        return !string.IsNullOrWhiteSpace(afroCutId) ||
-               !string.IsNullOrWhiteSpace(educationalTitle) ||
-               !string.IsNullOrWhiteSpace(educationalSummary);
+        return !string.IsNullOrWhiteSpace(educationalTitle) ||
+               !string.IsNullOrWhiteSpace(educationalSummary) ||
+               !string.IsNullOrWhiteSpace(afroCutId);
     }
 
     public void SyncCompatibilityFields()
@@ -143,18 +137,50 @@ public class ClientRequestData
         if (string.IsNullOrWhiteSpace(id) && !string.IsNullOrWhiteSpace(requestId))
             id = requestId;
 
-        if (string.IsNullOrWhiteSpace(requestTitle) && !string.IsNullOrWhiteSpace(requestName))
-            requestTitle = requestName;
+        if (string.IsNullOrWhiteSpace(requestName))
+            requestName = name;
 
-        if (string.IsNullOrWhiteSpace(requestName) && !string.IsNullOrWhiteSpace(requestTitle))
-            requestName = requestTitle;
+        if (serviceTimeMinutes <= 0f && serviceTime > 0f)
+            serviceTimeMinutes = serviceTime;
 
-        if (string.IsNullOrWhiteSpace(requestDescription) && !string.IsNullOrWhiteSpace(description))
-            requestDescription = description;
+        if (serviceTime <= 0f && serviceTimeMinutes > 0f)
+            serviceTime = serviceTimeMinutes;
 
-        if (string.IsNullOrWhiteSpace(description) && !string.IsNullOrWhiteSpace(requestDescription))
-            description = requestDescription;
+        if (time <= 0f && serviceTimeMinutes > 0f)
+            time = serviceTimeMinutes;
+
+        if (servicePrice <= 0 && price > 0)
+            servicePrice = price;
+
+        if (price <= 0 && servicePrice > 0)
+            price = servicePrice;
     }
 
+#if UNITY_EDITOR
+    private void OnValidate()
+    {
+        SyncCompatibilityFields();
 
+        if (difficulty < 1)
+            difficulty = 1;
+
+        if (price < 0)
+            price = 0;
+
+        if (servicePrice < 0)
+            servicePrice = 0;
+
+        if (xpReward < 0)
+            xpReward = 0;
+
+        if (serviceTimeMinutes < 1f)
+            serviceTimeMinutes = 1f;
+
+        if (serviceTime < 1f)
+            serviceTime = serviceTimeMinutes;
+
+        if (time < 1f)
+            time = serviceTimeMinutes;
+    }
+#endif
 }

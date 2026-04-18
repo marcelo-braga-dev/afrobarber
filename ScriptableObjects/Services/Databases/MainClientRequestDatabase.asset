@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: MainClientRequestDatabase
   m_EditorClassIdentifier: Assembly-CSharp::ClientRequestDatabase
   requests:
-  - priceTable: {fileID: 0}
+  - priceTable: {fileID: 11400000, guid: 24504ec38018014428d057cf832d353a, type: 2}
     serviceType: 0
     customServiceId: 
     xpReward: 15
