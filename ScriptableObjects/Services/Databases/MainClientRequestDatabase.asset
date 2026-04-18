@@ -12,4 +12,40 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b3ead1d1f56e13340a4ad6f98b67c125, type: 3}
   m_Name: MainClientRequestDatabase
   m_EditorClassIdentifier: Assembly-CSharp::ClientRequestDatabase
-  requests: []
+  requests:
+  - priceTable: {fileID: 0}
+    serviceType: 0
+    customServiceId: 
+    xpReward: 15
+    serviceTimeMinutes: 10
+    beforeHairId: 
+    afterHairId: 
+    id: request_fade_afro
+    requestName: Fade Afro
+    description: Cliente quer um fade afro bem definido.
+    icon: {fileID: 0}
+    haircutType: 0
+    servicePrice: 35
+    serviceTime: 15
+    difficulty: 0
+    requiredItems:
+    - requirementId: maquina_corte
+      displayName: "M\xE1quina de Corte"
+      category: 0
+      specificProductId: 
+      usageType: 0
+      hoursConsumed: 15
+      amountConsumed: 1
+    - requirementId: 
+      displayName: 
+      category: 0
+      specificProductId: 
+      usageType: 0
+      hoursConsumed: 0
+      amountConsumed: 0
+    afroCutId: 
+    educationalTitle: 
+    educationalSummary: 
+    requestId: 
+    requestTitle: 
+    requestDescription: 

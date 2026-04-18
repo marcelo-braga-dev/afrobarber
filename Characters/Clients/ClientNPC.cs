@@ -108,7 +108,7 @@ public class ClientNPC : MonoBehaviour
 
     public bool HasFixedProfileRequest()
     {
-        return serviceProfile != null && serviceProfile.requestData != null;
+        return serviceProfile != null && serviceProfile.GetRequest() != null;
     }
 
     public void SetRequest(ClientRequestData request)
@@ -165,7 +165,7 @@ public class ClientNPC : MonoBehaviour
     {
         if (HasFixedProfileRequest())
         {
-            currentRequest = serviceProfile.requestData;
+            currentRequest = serviceProfile.GetRequest();
             currentRequest?.SyncCompatibilityFields();
             return;
         }
@@ -185,6 +185,12 @@ public class ClientNPC : MonoBehaviour
         if (hairVisualController == null)
             return;
 
+        if (currentRequest != null && !string.IsNullOrWhiteSpace(currentRequest.beforeHairId))
+        {
+            hairVisualController.ApplyHairById(currentRequest.beforeHairId);
+            return;
+        }
+
         if (serviceProfile != null)
             hairVisualController.ApplyBeforeHair(serviceProfile);
     }
@@ -197,11 +203,18 @@ public class ClientNPC : MonoBehaviour
         if (hairVisualController == null)
             return;
 
-        if (serviceProfile == null)
+        if (currentRequest != null && !string.IsNullOrWhiteSpace(currentRequest.afterHairId))
+        {
+            hairVisualController.ApplyHairById(currentRequest.afterHairId);
+            finalHairApplied = true;
             return;
+        }
 
-        hairVisualController.ApplyAfterHair(serviceProfile);
-        finalHairApplied = true;
+        if (serviceProfile != null)
+        {
+            hairVisualController.ApplyAfterHair(serviceProfile);
+            finalHairApplied = true;
+        }
     }
 
     public AfroCutInfo GetCurrentCutInfo()

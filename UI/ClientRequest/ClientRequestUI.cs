@@ -16,10 +16,12 @@ public class ClientRequestUI : MonoBehaviour
     [SerializeField] private TMP_Text descriptionText;
     [SerializeField] private TMP_Text priceText;
     [SerializeField] private TMP_Text timeText;
+    [SerializeField] private TMP_Text xpText;
     [SerializeField] private TMP_Text difficultyText;
     [SerializeField] private TMP_Text summaryText;
     [SerializeField] private Image readinessFillImage;
     [SerializeField] private TMP_Text readinessText;
+    [SerializeField] private TMP_Text missingItemsWarningText;
 
     [Header("Preview educacional (opcional)")]
     [SerializeField] private GameObject educationPanel;
@@ -171,6 +173,12 @@ public class ClientRequestUI : MonoBehaviour
         bool hasAllItems = InventoryManager.Instance != null &&
                            InventoryManager.Instance.HasAllRequirements(currentRequest.requiredItems) &&
                            ServiceLoadoutBuilder.IsLoadoutComplete(currentRequest, currentLoadout);
+
+        if (missingItemsWarningText != null)
+        {
+            missingItemsWarningText.gameObject.SetActive(!hasAllItems);
+            missingItemsWarningText.text = "Você não possui todos os itens necessários para realizar este atendimento.";
+        }
 
         if (acceptButton != null)
             acceptButton.gameObject.SetActive(hasAllItems);

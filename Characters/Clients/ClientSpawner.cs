@@ -35,6 +35,32 @@ public class ClientSpawner : MonoBehaviour
     private Coroutine spawnRoutine;
     private bool clientsDismissedForClosedHours;
 
+
+
+    private void Awake()
+    {
+        AutoFindReferences();
+    }
+
+
+
+    private void AutoFindReferences()
+    {
+        if (waitingAreaManager == null)
+            waitingAreaManager = FindFirstObjectByType<WaitingAreaManager>();
+
+        if (playerTransform == null)
+        {
+            GameObject player = GameObject.FindGameObjectWithTag("Player");
+
+            if (player != null)
+                playerTransform = player.transform;
+        }
+
+        if (exitPoint == null && BarbershopServiceManager.Instance != null)
+            exitPoint = BarbershopServiceManager.Instance.ExitPoint;
+    }
+
     private void Start()
     {
         if (autoSpawn)
@@ -91,8 +117,12 @@ public class ClientSpawner : MonoBehaviour
         if (!CanSpawnNow())
             return false;
 
+        Debug.Log($"[ClientSpawner] Antes de validar | waitingAreaManager: {(waitingAreaManager != null ? waitingAreaManager.name : "NULL")}");
+
         if (!ValidateReferences())
             return false;
+
+        Debug.Log($"[ClientSpawner] Referências OK. Vai tentar spawnar cliente.");
 
         if (aliveClients.Count >= maxClientsAlive)
             return false;
@@ -241,6 +271,8 @@ public class ClientSpawner : MonoBehaviour
 
     private bool ValidateReferences()
     {
+        AutoFindReferences();
+
         if (playerTransform == null)
         {
             Debug.LogWarning("[ClientSpawner] playerTransform não configurado.");
@@ -249,7 +281,7 @@ public class ClientSpawner : MonoBehaviour
 
         if (waitingAreaManager == null)
         {
-            Debug.LogWarning("[ClientSpawner] waitingAreaManager não configurado.");
+            Debug.LogWarning("[ClientSpawner] waitingAreaManager não configurado. Nenhum WaitingAreaManager foi encontrado na cena.");
             return false;
         }
 

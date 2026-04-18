@@ -17,7 +17,7 @@ public class BarbershopServiceManager : MonoBehaviour
     [Header("Configuração do atendimento")]
     [SerializeField] private bool autoCompleteServiceByTime = true;
     [SerializeField] private bool consumeInventoryOnFinish = true;
-    [SerializeField] private bool sendClientAwayIfMissingItems = true;
+    [SerializeField] private bool sendClientAwayIfMissingItems = false;
     [SerializeField] private float defaultEnvironmentComfortScore = 3.5f;
     [SerializeField] private bool defaultHadMistakes = false;
 
@@ -84,7 +84,12 @@ public class BarbershopServiceManager : MonoBehaviour
 
         ClientRequestData request = client.RequestData;
 
-        PreparedServiceLoadout loadout = PrepareLoadoutForClient(request);
+        PreparedServiceLoadout loadout = client.PreparedLoadout;
+
+        if (loadout == null || !ServiceLoadoutBuilder.IsLoadoutComplete(request, loadout))
+        {
+            loadout = PrepareLoadoutForClient(request);
+        }
 
         if (!ServiceLoadoutBuilder.IsLoadoutComplete(request, loadout))
         {
@@ -224,6 +229,10 @@ public class BarbershopServiceManager : MonoBehaviour
         UnlockEducationalContent(request);
 
         AddServicePayment(request, evaluationResult);
+
+        AddServiceXP(request);
+
+        AddServiceRating(evaluationResult, equipmentQuality, productQuality);
 
         if (enableDebugLogs)
         {
@@ -422,10 +431,16 @@ public class BarbershopServiceManager : MonoBehaviour
 
         int value = request.ServicePrice;
 
-        Debug.Log($"[BarbershopServiceManager] Pagamento recebido: R$ {value} | Serviço: {request.RequestName}");
+        if (BarbershopCashRegister.Instance != null)
+        {
+            BarbershopCashRegister.Instance.AddMoney(value);
+        }
+        else
+        {
+            Debug.LogWarning("[BarbershopServiceManager] BarbershopCashRegister.Instance não encontrado. Dinheiro não foi adicionado ao caixa.");
+        }
 
-        // Integração financeira real será conectada depois,
-        // quando o FinanceManager oficial do projeto estiver padronizado.
+        Debug.Log($"[BarbershopServiceManager] Pagamento recebido: R$ {value} | Serviço: {request.RequestName}");
     }
 
     public void NotifyClientFinishedCashier(ClientNPC client)
@@ -465,5 +480,41 @@ public class BarbershopServiceManager : MonoBehaviour
 
         if (BarberQueueSystem.Instance != null)
             BarberQueueSystem.Instance.RemoveClientFromQueue(client);
+    }
+
+    private void AddServiceXP(ClientRequestData request)
+    {
+        if (request == null)
+            return;
+
+        if (PlayerXPManager.Instance == null)
+        {
+            Debug.LogWarning("[BarbershopServiceManager] PlayerXPManager.Instance não encontrado. XP não foi adicionado.");
+            return;
+        }
+
+        PlayerXPManager.Instance.AddXP(Mathf.Max(0, request.xpReward));
+    }
+
+    private void AddServiceRating(ServiceEvaluationResult evaluationResult, float equipmentQuality, float productQuality)
+    {
+        if (BarbershopRatingManager.Instance == null)
+        {
+            Debug.LogWarning("[BarbershopServiceManager] BarbershopRatingManager.Instance não encontrado. Avaliação não foi registrada.");
+            return;
+        }
+
+        float rating = 3f;
+
+        if (evaluationResult != null)
+        {
+            rating = evaluationResult.finalScore;
+        }
+        else
+        {
+            rating = (equipmentQuality + productQuality + defaultEnvironmentComfortScore) / 3f;
+        }
+
+        BarbershopRatingManager.Instance.AddReview(rating);
     }
 }

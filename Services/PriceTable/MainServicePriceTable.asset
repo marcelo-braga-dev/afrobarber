@@ -1,0 +1,39 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 217da41733a9e7345b90bdcd6825f187, type: 3}
+  m_Name: MainServicePriceTable
+  m_EditorClassIdentifier: Assembly-CSharp::ServicePriceTable
+  prices:
+  - serviceType: 0
+    customServiceId: 
+    displayName: Corte de Cabelo
+    price: 35
+  - serviceType: 1
+    customServiceId: 
+    displayName: Corte de Cabelo e Barba
+    price: 55
+  - serviceType: 2
+    customServiceId: 
+    displayName: Barba
+    price: 25
+  - serviceType: 3
+    customServiceId: 
+    displayName: Acabamento/Pezinho
+    price: 15
+  - serviceType: 4
+    customServiceId: 
+    displayName: Design de Sobrancelhas
+    price: 20
+  - serviceType: 5
+    customServiceId: 
+    displayName: "Hidrata\xE7\xE3o"
+    price: 40

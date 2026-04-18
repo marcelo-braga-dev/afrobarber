@@ -4,6 +4,21 @@ using UnityEngine;
 [System.Serializable]
 public class ClientRequestData
 {
+    [Header("Tabela de Preços")]
+    public ServicePriceTable priceTable;
+    public ServiceType serviceType = ServiceType.CorteDeCabelo;
+    public string customServiceId;
+
+    [Header("Recompensas")]
+    public int xpReward = 10;
+
+    [Header("Tempo")]
+    public float serviceTimeMinutes = 10f;
+
+    [Header("Visual do Cliente")]
+    public string beforeHairId;
+    public string afterHairId;    
+
     [Header("Identificação")]
     public string id;
     public string requestName;
@@ -34,9 +49,6 @@ public class ClientRequestData
         }
     }
 
-    [Header("Progressão")]
-    public int xpReward = 10;
-
     [Header("Dificuldade")]
     [Range(1, 5)]
     public int difficulty = 1;
@@ -46,6 +58,7 @@ public class ClientRequestData
 
     [Header("Sistema educacional")]
     public string afroCutId;
+    [TextArea(2, 5)]
     public string educationalTitle;
     [TextArea]
     public string educationalSummary;
@@ -142,4 +155,6 @@ public class ClientRequestData
         if (string.IsNullOrWhiteSpace(description) && !string.IsNullOrWhiteSpace(requestDescription))
             description = requestDescription;
     }
+
+
 }
