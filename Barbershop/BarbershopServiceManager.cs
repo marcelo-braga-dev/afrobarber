@@ -1,24 +1,38 @@
+using System.Collections;
 using UnityEngine;
 
 public class BarbershopServiceManager : MonoBehaviour
 {
     public static BarbershopServiceManager Instance { get; private set; }
 
+    [Header("Pontos do atendimento")]
     [SerializeField] private Transform barberChairWalkPoint;
     [SerializeField] private Transform barberChairSitPoint;
     [SerializeField] private Transform cashierPoint;
     [SerializeField] private Transform exitPoint;
 
+    [Header("Integrações")]
+    [SerializeField] private BarberWorkController barberWorkController;
+
+    [Header("Configuração do atendimento")]
+    [SerializeField] private bool autoCompleteServiceByTime = true;
+    [SerializeField] private bool consumeInventoryOnFinish = true;
+    [SerializeField] private bool sendClientAwayIfMissingItems = true;
+    [SerializeField] private float defaultEnvironmentComfortScore = 3.5f;
+    [SerializeField] private bool defaultHadMistakes = false;
+
     [Header("Debug")]
     [SerializeField] private bool enableDebugLogs = true;
 
     private ClientNPC currentClient;
+    private Coroutine currentServiceRoutine;
 
     public Transform BarberChairWalkPoint => barberChairWalkPoint;
     public Transform BarberChairSitPoint => barberChairSitPoint;
     public Transform CashierPoint => cashierPoint;
     public Transform ExitPoint => exitPoint;
     public ClientNPC CurrentClient => currentClient;
+    public bool HasActiveService => currentClient != null;
 
     private void Awake()
     {
@@ -29,6 +43,9 @@ public class BarbershopServiceManager : MonoBehaviour
         }
 
         Instance = this;
+
+        if (barberWorkController == null)
+            barberWorkController = FindFirstObjectByType<BarberWorkController>();
     }
 
     public bool HasClientInService()
@@ -41,25 +58,119 @@ public class BarbershopServiceManager : MonoBehaviour
         if (client == null)
             return false;
 
-        if (PlayerEnergySystem.Instance != null && !PlayerEnergySystem.Instance.CanStartService())
-        {
-            Debug.LogWarning("[BarbershopServiceManager] Energia abaixo de 10. Não é possível iniciar atendimento.");
-            return false;
-        }
-
         if (currentClient != null)
         {
             Debug.LogWarning("[BarbershopServiceManager] Já existe um cliente em atendimento.");
             return false;
         }
 
+        if (client.RequestData == null)
+        {
+            Debug.LogWarning($"[BarbershopServiceManager] Cliente {client.name} não possui pedido configurado.");
+            return false;
+        }
+
+        if (PlayerEnergySystem.Instance != null && !PlayerEnergySystem.Instance.CanStartService())
+        {
+            Debug.LogWarning("[BarbershopServiceManager] Energia insuficiente para iniciar atendimento.");
+            return false;
+        }
+
+        if (barberChairWalkPoint == null)
+        {
+            Debug.LogWarning("[BarbershopServiceManager] barberChairWalkPoint não configurado.");
+            return false;
+        }
+
+        ClientRequestData request = client.RequestData;
+
+        PreparedServiceLoadout loadout = PrepareLoadoutForClient(request);
+
+        if (!ServiceLoadoutBuilder.IsLoadoutComplete(request, loadout))
+        {
+            Debug.LogWarning($"[BarbershopServiceManager] Itens insuficientes para atender: {request.RequestName}");
+
+            if (sendClientAwayIfMissingItems)
+                client.DispenseDueToMissingItems();
+
+            return false;
+        }
+
+        client.SetPreparedLoadout(loadout);
+
         currentClient = client;
 
+        if (BarberQueueSystem.Instance != null)
+            BarberQueueSystem.Instance.MarkClientAsBeingServed(client, true);
+
+        float equipmentQuality = CalculateEquipmentQuality(loadout);
+        float productQuality = CalculateProductQuality(loadout);
+        float expectedDuration = GetExpectedServiceDuration(request);
+
+        if (barberWorkController != null)
+        {
+            barberWorkController.SetCurrentServiceInfo(request.RequestName, request.ServicePrice);
+            barberWorkController.StartService(
+                client,
+                expectedDuration,
+                equipmentQuality,
+                productQuality,
+                defaultEnvironmentComfortScore
+            );
+        }
+
         if (enableDebugLogs)
-            Debug.Log($"[BarbershopServiceManager] Iniciando atendimento de {client.name}");
+            Debug.Log($"[BarbershopServiceManager] Iniciando atendimento de {client.name} | Pedido: {request.RequestName}");
 
         client.StartService(barberChairWalkPoint, barberChairSitPoint);
+
+        if (currentServiceRoutine != null)
+            StopCoroutine(currentServiceRoutine);
+
+        if (autoCompleteServiceByTime)
+            currentServiceRoutine = StartCoroutine(AutoCompleteServiceRoutine(client, expectedDuration));
+
         return true;
+    }
+
+    private PreparedServiceLoadout PrepareLoadoutForClient(ClientRequestData request)
+    {
+        if (request == null)
+            return new PreparedServiceLoadout();
+
+        if (InventoryManager.Instance == null)
+        {
+            Debug.LogWarning("[BarbershopServiceManager] InventoryManager.Instance não encontrado.");
+            return new PreparedServiceLoadout();
+        }
+
+        return ServiceLoadoutBuilder.BuildDefaultLoadout(request);
+    }
+
+    private IEnumerator AutoCompleteServiceRoutine(ClientNPC client, float expectedDurationMinutes)
+    {
+        if (client == null)
+            yield break;
+
+        float duration = expectedDurationMinutes;
+
+        if (barberWorkController != null)
+            duration = barberWorkController.GetAdjustedServiceDuration(expectedDurationMinutes);
+
+        float seconds = ConvertGameMinutesToRealSeconds(duration);
+
+        if (enableDebugLogs)
+            Debug.Log($"[BarbershopServiceManager] Atendimento automático durará {seconds:0.0}s reais.");
+
+        yield return new WaitForSeconds(seconds);
+
+        if (currentClient == client)
+            CompleteCurrentService();
+    }
+
+    private float ConvertGameMinutesToRealSeconds(float gameMinutes)
+    {
+        return Mathf.Max(1f, gameMinutes);
     }
 
     public void CompleteCurrentService()
@@ -70,29 +181,65 @@ public class BarbershopServiceManager : MonoBehaviour
             return;
         }
 
-        ClientRequestData request = currentClient.RequestData;
+        ClientNPC finishedClient = currentClient;
+        ClientRequestData request = finishedClient.RequestData;
+
+        if (request == null)
+        {
+            Debug.LogWarning("[BarbershopServiceManager] Cliente atual não possui RequestData.");
+            SendCurrentClientToExitOrCashier();
+            return;
+        }
+
+        if (currentServiceRoutine != null)
+        {
+            StopCoroutine(currentServiceRoutine);
+            currentServiceRoutine = null;
+        }
+
+        PreparedServiceLoadout loadout = finishedClient.PreparedLoadout;
+
+        float equipmentQuality = CalculateEquipmentQuality(loadout);
+        float productQuality = CalculateProductQuality(loadout);
+        float expectedDuration = GetExpectedServiceDuration(request);
+        float actualDuration = GetActualServiceDuration(expectedDuration);
+
+        if (consumeInventoryOnFinish)
+            ConsumeLoadoutItems(request, loadout);
+
+        ServiceEvaluationResult evaluationResult = null;
+
+        if (barberWorkController != null)
+        {
+            evaluationResult = barberWorkController.FinishService(
+                actualDuration,
+                equipmentQuality,
+                productQuality,
+                defaultHadMistakes
+            );
+        }
+
+        finishedClient.MarkServiceCompleted();
+
+        UnlockEducationalContent(request);
+
+        AddServicePayment(request, evaluationResult);
 
         if (enableDebugLogs)
         {
             Debug.Log(
-                $"[BarbershopServiceManager] Concluindo atendimento de {currentClient.name} | " +
-                $"Pedido: {(request != null ? request.requestName : "NULL")}"
+                $"[BarbershopServiceManager] Atendimento concluído | Cliente: {finishedClient.name} | " +
+                $"Pedido: {request.RequestName} | Valor: {request.ServicePrice}"
             );
         }
 
-        currentClient.MarkServiceCompleted();
+        SendCurrentClientToExitOrCashier();
+    }
 
-        if (request != null)
-        {
-            if (EducationProgressManager.Instance != null && !string.IsNullOrWhiteSpace(request.afroCutId))
-            {
-                EducationProgressManager.Instance.UnlockCut(request.afroCutId);
-            }
-
-            // Aqui você pode integrar depois com dinheiro/XP reais do jogador:
-            // FinanceManager.Instance?.AddMoney(request.ServicePrice);
-            // PlayerLevelSystem.Instance?.AddXP(request.xpReward);
-        }
+    private void SendCurrentClientToExitOrCashier()
+    {
+        if (currentClient == null)
+            return;
 
         if (cashierPoint != null)
         {
@@ -100,12 +247,185 @@ public class BarbershopServiceManager : MonoBehaviour
         }
         else if (exitPoint != null)
         {
-            currentClient.LeaveShop(exitPoint);
+            ClientNPC client = currentClient;
+            currentClient = null;
+            client.LeaveShop(exitPoint);
         }
         else
         {
-            currentClient.ForceDespawn();
+            ClientNPC client = currentClient;
+            currentClient = null;
+            client.ForceDespawn();
         }
+    }
+
+    private float GetExpectedServiceDuration(ClientRequestData request)
+    {
+        if (request == null)
+            return 1f;
+
+        return Mathf.Max(1f, request.ServiceTime);
+    }
+
+    private float GetActualServiceDuration(float expectedDuration)
+    {
+        if (barberWorkController != null)
+            return barberWorkController.GetAdjustedServiceDuration(expectedDuration);
+
+        if (PlayerEnergySystem.Instance != null)
+            return expectedDuration * PlayerEnergySystem.Instance.GetServiceTimeMultiplier();
+
+        return expectedDuration;
+    }
+
+    private void ConsumeLoadoutItems(ClientRequestData request, PreparedServiceLoadout loadout)
+    {
+        if (request == null || request.requiredItems == null || request.requiredItems.Count == 0)
+            return;
+
+        if (loadout == null)
+        {
+            Debug.LogWarning("[BarbershopServiceManager] Loadout nulo. Não foi possível consumir itens.");
+            return;
+        }
+
+        if (InventoryManager.Instance == null)
+        {
+            Debug.LogWarning("[BarbershopServiceManager] InventoryManager.Instance não encontrado. Itens não consumidos.");
+            return;
+        }
+
+        foreach (ServiceRequirementData requirement in request.requiredItems)
+        {
+            if (requirement == null)
+                continue;
+
+            PreparedServiceItemSelection selection = loadout.GetSelectionByRequirement(requirement.requirementId);
+
+            if (selection == null)
+            {
+                Debug.LogWarning($"[BarbershopServiceManager] Nenhuma seleção encontrada para requisito: {requirement.GetDisplayName()}");
+                continue;
+            }
+
+            bool consumed = false;
+
+            switch (requirement.usageType)
+            {
+                case InventoryUsageType.PorHoraDeUso:
+                    consumed = InventoryManager.Instance.ConsumeDurableHoursByUniqueId(
+                        selection.productUniqueId,
+                        Mathf.Max(1, requirement.hoursConsumed)
+                    );
+                    break;
+
+                case InventoryUsageType.PorServico:
+                default:
+                    consumed = InventoryManager.Instance.ConsumeProductUsageByUniqueId(
+                        selection.productUniqueId,
+                        Mathf.Max(1, requirement.amountConsumed)
+                    );
+                    break;
+            }
+
+            if (enableDebugLogs)
+            {
+                Debug.Log(
+                    $"[BarbershopServiceManager] Consumo de item | Requisito: {requirement.GetDisplayName()} | " +
+                    $"Produto: {selection.productId} | Sucesso: {consumed}"
+                );
+            }
+        }
+
+        InventoryManager.Instance.RemoveAllUnusableItems();
+    }
+
+    private float CalculateEquipmentQuality(PreparedServiceLoadout loadout)
+    {
+        return CalculateAverageQuality(loadout, includeConsumables: false);
+    }
+
+    private float CalculateProductQuality(PreparedServiceLoadout loadout)
+    {
+        return CalculateAverageQuality(loadout, includeConsumables: true);
+    }
+
+    private float CalculateAverageQuality(PreparedServiceLoadout loadout, bool includeConsumables)
+    {
+        if (loadout == null || loadout.selections == null || loadout.selections.Count == 0)
+            return 3f;
+
+        if (InventoryManager.Instance == null)
+            return 3f;
+
+        float total = 0f;
+        int count = 0;
+
+        foreach (PreparedServiceItemSelection selection in loadout.selections)
+        {
+            if (selection == null)
+                continue;
+
+            ProductData product = InventoryManager.Instance.GetProductDataById(selection.productId);
+
+            if (product == null)
+                continue;
+
+            bool isConsumable = product.inventoryItemType != InventoryItemType.Duravel;
+
+            if (includeConsumables != isConsumable)
+                continue;
+
+            float score = ProductToFiveStarScore(product);
+            total += score;
+            count++;
+        }
+
+        if (count <= 0)
+            return 3f;
+
+        return Mathf.Clamp(total / count, 0f, 5f);
+    }
+
+    private float ProductToFiveStarScore(ProductData product)
+    {
+        if (product == null)
+            return 3f;
+
+        float precision = Mathf.Clamp(product.precisao, 0f, 100f);
+        float speed = Mathf.Clamp(product.velocidade, 0f, 100f);
+        float durability = Mathf.Clamp(product.durabilidade, 0f, 100f);
+
+        float average = (precision + speed + durability) / 3f;
+
+        return Mathf.Clamp(average / 20f, 0f, 5f);
+    }
+
+    private void UnlockEducationalContent(ClientRequestData request)
+    {
+        if (request == null)
+            return;
+
+        if (EducationProgressManager.Instance == null)
+            return;
+
+        if (string.IsNullOrWhiteSpace(request.afroCutId))
+            return;
+
+        EducationProgressManager.Instance.UnlockCut(request.afroCutId);
+    }
+
+    private void AddServicePayment(ClientRequestData request, ServiceEvaluationResult evaluationResult)
+    {
+        if (request == null)
+            return;
+
+        int value = request.ServicePrice;
+
+        Debug.Log($"[BarbershopServiceManager] Pagamento recebido: R$ {value} | Serviço: {request.RequestName}");
+
+        // Integração financeira real será conectada depois,
+        // quando o FinanceManager oficial do projeto estiver padronizado.
     }
 
     public void NotifyClientFinishedCashier(ClientNPC client)
@@ -120,6 +440,9 @@ public class BarbershopServiceManager : MonoBehaviour
             if (enableDebugLogs)
                 Debug.Log($"[BarbershopServiceManager] Cliente {client.name} terminou no caixa.");
         }
+
+        if (BarberQueueSystem.Instance != null)
+            BarberQueueSystem.Instance.RemoveClientFromQueue(client);
 
         if (exitPoint != null)
             client.LeaveShop(exitPoint);
@@ -139,5 +462,8 @@ public class BarbershopServiceManager : MonoBehaviour
             if (enableDebugLogs)
                 Debug.Log($"[BarbershopServiceManager] Cliente {client.name} liberado do atendimento.");
         }
+
+        if (BarberQueueSystem.Instance != null)
+            BarberQueueSystem.Instance.RemoveClientFromQueue(client);
     }
 }
