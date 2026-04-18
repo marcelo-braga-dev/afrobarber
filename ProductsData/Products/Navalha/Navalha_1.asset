@@ -1,0 +1,35 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3493f23819eb2294486a2040d8651c2b, type: 3}
+  m_Name: Navalha_1
+  m_EditorClassIdentifier: Assembly-CSharp::ProductData
+  productId: Navalha_1
+  productName: Navalha 1
+  description: 
+  category: 3
+  rarity: 0
+  inventoryItemType: 0
+  usageType: 0
+  icon: {fileID: 21300000, guid: 7c75fc40c7159e54e969763d8b7325f4, type: 3}
+  prefab: {fileID: 0}
+  preco: 50
+  availableAtStart: 1
+  precisao: 10
+  velocidade: 19
+  durabilidade: 10
+  tempoEntrega: 2
+  canBePlacedInScene: 0
+  canBeUsedForHaircut: 0
+  vidaUtilMinimaHoras: 100
+  capacidadeConsumivel: 100
+  consumoPorUso: 1
+  unidadesNaCaixa: 10

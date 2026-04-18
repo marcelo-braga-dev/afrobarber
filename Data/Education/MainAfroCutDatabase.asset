@@ -1,0 +1,129 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 96b67ad44c950354b9e34a6006871c20, type: 3}
+  m_Name: MainAfroCutDatabase
+  m_EditorClassIdentifier: Assembly-CSharp::AfroCutDatabase
+  cuts:
+  - cutId: black_power_classico
+    cutName: "Black Power Cl\xE1ssico"
+    category: 6
+    decade: "1960s\u20131970s"
+    shortGameplayDescription: "Volume natural marcante, associado ao orgulho negro
+      e \xE0 valoriza\xE7\xE3o da est\xE9tica afro."
+    rewardMoney: 40
+    rewardXP: 20
+    difficultyLevel: 2
+    historicalSummary: "O Afro se tornou um dos s\xEDmbolos visuais mais fortes dos
+      movimentos Black is Beautiful e Black Power nas d\xE9cadas de 1960 e 1970."
+    fullHistoricalDescription: "Embora o cabelo natural afro-texturizado exista h\xE1
+      muito antes disso, o penteado conhecido popularmente como Afro ganhou enorme
+      for\xE7a pol\xEDtica e cultural nas d\xE9cadas de 1960 e 1970. O Afro passou
+      a representar autoestima, consci\xEAncia racial, resist\xEAncia e liberdade
+      est\xE9tica."
+    culturalMeaning: "S\xEDmbolo de orgulho, identidade, resist\xEAncia e valoriza\xE7\xE3o
+      da beleza negra natural."
+    funFact: "A imagem de Angela Davis ajudou a transformar o Afro em um \xEDcone
+      pol\xEDtico e cultural."
+    icon: {fileID: 0}
+  - cutId: flat_top
+    cutName: Flat Top
+    category: 5
+    decade: "1980s\u20131990s"
+    shortGameplayDescription: "Topo alto e marcado, ligado \xE0 est\xE9tica urbana
+      negra e ao hip-hop cl\xE1ssico."
+    rewardMoney: 45
+    rewardXP: 24
+    difficultyLevel: 3
+    historicalSummary: "O Flat Top se popularizou entre o fim dos anos 1980 e in\xEDcio
+      dos 1990."
+    fullHistoricalDescription: "O Flat Top, especialmente em sua vers\xE3o hi-top
+      fade, ganhou enorme popularidade no fim dos anos 1980 e in\xEDcio dos anos
+      1990, tornando-se um marco visual do hip-hop."
+    culturalMeaning: "Representa express\xE3o urbana, criatividade visual e conex\xE3o
+      com a era de ouro do hip-hop."
+    funFact: Virou uma das marcas visuais mais lembradas do rap do final dos anos
+      1980.
+    icon: {fileID: 0}
+  - cutId: fade_afro
+    cutName: Fade Afro
+    category: 1
+    decade: "1990s\u2013presente"
+    shortGameplayDescription: "Laterais em degrad\xEA e topo afro, unindo t\xE9cnica
+      e identidade."
+    rewardMoney: 42
+    rewardXP: 22
+    difficultyLevel: 3
+    historicalSummary: O fade afro consolidou-se como um estilo central da barbearia
+      negra moderna.
+    fullHistoricalDescription: "A combina\xE7\xE3o do degrad\xEA lateral com o topo
+      afro-texturizado ajudou a criar um visual preciso, moderno e muito forte na
+      cultura urbana."
+    culturalMeaning: "Representa modernidade, precis\xE3o e evolu\xE7\xE3o da est\xE9tica
+      negra na barbearia."
+    funFact: "\xC9 um dos cortes mais adapt\xE1veis do jogo."
+    icon: {fileID: 0}
+  - cutId: trancas_nago
+    cutName: "Tran\xE7as Nag\xF4"
+    category: 2
+    decade: "Ancestral\u2013presente"
+    shortGameplayDescription: "Tran\xE7as rentes ao couro cabeludo com ra\xEDzes
+      africanas profundas."
+    rewardMoney: 50
+    rewardXP: 28
+    difficultyLevel: 4
+    historicalSummary: "T\xEAm ra\xEDzes antigas em sociedades africanas e carregam
+      significado social e cultural."
+    fullHistoricalDescription: "As tran\xE7as rentes ao couro cabeludo atravessaram
+      s\xE9culos entre popula\xE7\xF5es negras e serviram como mem\xF3ria, heran\xE7a
+      e afirma\xE7\xE3o identit\xE1ria."
+    culturalMeaning: "Representam ancestralidade, mem\xF3ria, pertencimento e resist\xEAncia
+      cultural."
+    funFact: "Em v\xE1rias sociedades africanas, tran\xE7as podiam indicar idade,
+      status e origem."
+    icon: {fileID: 0}
+  - cutId: dreads_locs
+    cutName: Dreads / Locs
+    category: 3
+    decade: "Antigo\u2013presente"
+    shortGameplayDescription: "Mechas compactadas ligadas \xE0 espiritualidade, identidade
+      e resist\xEAncia."
+    rewardMoney: 55
+    rewardXP: 30
+    difficultyLevel: 4
+    historicalSummary: "Locs aparecem em diferentes povos, mas ganharam forte associa\xE7\xE3o
+      moderna com identidade negra."
+    fullHistoricalDescription: "No contexto moderno, os locs ganharam for\xE7a simb\xF3lica
+      dentro de experi\xEAncias negras da di\xE1spora, inclusive em conex\xE3o com
+      espiritualidade e afirma\xE7\xE3o identit\xE1ria."
+    culturalMeaning: "Representam espiritualidade, autonomia est\xE9tica e resist\xEAncia
+      \xE0 discrimina\xE7\xE3o."
+    funFact: "Ganharam significado muito forte na hist\xF3ria negra contempor\xE2nea."
+    icon: {fileID: 0}
+  - cutId: twists
+    cutName: Twists
+    category: 4
+    decade: "Contempor\xE2neo, com ra\xEDzes tradicionais"
+    shortGameplayDescription: "Tor\xE7\xF5es em mechas que valorizam a textura afro
+      e funcionam como prote\xE7\xE3o."
+    rewardMoney: 38
+    rewardXP: 18
+    difficultyLevel: 2
+    historicalSummary: "Os twists modernos fazem parte da valoriza\xE7\xE3o da textura
+      afro e dos penteados protetivos."
+    fullHistoricalDescription: "Os twists ganharam for\xE7a como op\xE7\xE3o pr\xE1tica,
+      est\xE9tica e vers\xE1til dentro do movimento de valoriza\xE7\xE3o do cabelo
+      natural."
+    culturalMeaning: "Representam cuidado, versatilidade e valoriza\xE7\xE3o da textura
+      natural."
+    funFact: "Podem ser usados como estilo final e tamb\xE9m como base para outros
+      penteados."
+    icon: {fileID: 0}
