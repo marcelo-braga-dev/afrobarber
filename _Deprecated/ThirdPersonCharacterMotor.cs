@@ -62,6 +62,17 @@ public class ThirdPersonCharacterMotor : MonoBehaviour
     public bool IsGrounded => isGrounded;
     public Vector2 MoveInput => moveInput;
 
+    private bool CanUseController
+    {
+        get
+        {
+            return controller != null &&
+                   controller.enabled &&
+                   gameObject.activeInHierarchy &&
+                   enabled;
+        }
+    }
+
     private void Awake()
     {
         controller = GetComponent<CharacterController>();
@@ -82,6 +93,16 @@ public class ThirdPersonCharacterMotor : MonoBehaviour
         if (cameraTransform == null)
             return;
 
+        if (animator == null)
+            return;
+
+        if (!CanUseController)
+        {
+            ResetMotionState();
+            UpdateAnimatorSafe();
+            return;
+        }
+
         GroundCheck();
         HandleGravityAndJump();
 
@@ -90,7 +111,7 @@ public class ThirdPersonCharacterMotor : MonoBehaviour
         else
             StopMotion();
 
-        UpdateAnimator();
+        UpdateAnimatorSafe();
     }
 
     public void SetMovementEnabled(bool value)
@@ -98,15 +119,7 @@ public class ThirdPersonCharacterMotor : MonoBehaviour
         movementEnabled = value;
 
         if (!movementEnabled)
-        {
-            moveInput = Vector2.zero;
-            jumpPressed = false;
-            runHeld = false;
-            sprintHeld = false;
-            currentSpeed = 0f;
-            animMoveX = 0f;
-            animMoveZ = 0f;
-        }
+            ResetMotionState();
     }
 
     public void SetStrafeMode(bool value)
@@ -116,7 +129,7 @@ public class ThirdPersonCharacterMotor : MonoBehaviour
 
     public void OnMove(InputAction.CallbackContext context)
     {
-        if (!movementEnabled)
+        if (!movementEnabled || !CanUseController)
         {
             moveInput = Vector2.zero;
             return;
@@ -130,7 +143,7 @@ public class ThirdPersonCharacterMotor : MonoBehaviour
 
     public void OnJump(InputAction.CallbackContext context)
     {
-        if (!movementEnabled)
+        if (!movementEnabled || !CanUseController)
             return;
 
         if (context.performed)
@@ -139,16 +152,46 @@ public class ThirdPersonCharacterMotor : MonoBehaviour
 
     public void OnRun(InputAction.CallbackContext context)
     {
+        if (!movementEnabled || !CanUseController)
+        {
+            runHeld = false;
+            return;
+        }
+
         runHeld = context.ReadValueAsButton();
     }
 
     public void OnSprint(InputAction.CallbackContext context)
     {
+        if (!movementEnabled || !CanUseController)
+        {
+            sprintHeld = false;
+            return;
+        }
+
         sprintHeld = context.ReadValueAsButton();
+    }
+
+    private void ResetMotionState()
+    {
+        moveInput = Vector2.zero;
+        jumpPressed = false;
+        runHeld = false;
+        sprintHeld = false;
+        currentSpeed = 0f;
+        verticalVelocity = 0f;
+        animMoveX = 0f;
+        animMoveZ = 0f;
     }
 
     private void GroundCheck()
     {
+        if (!CanUseController)
+        {
+            isGrounded = false;
+            return;
+        }
+
         if (groundCheck == null)
         {
             isGrounded = controller.isGrounded;
@@ -163,21 +206,29 @@ public class ThirdPersonCharacterMotor : MonoBehaviour
             );
         }
 
-        animator.SetBool(GroundedHash, isGrounded);
+        if (animator != null)
+            animator.SetBool(GroundedHash, isGrounded);
     }
 
     private void HandleGravityAndJump()
     {
+        if (!CanUseController)
+            return;
+
         if (isGrounded && verticalVelocity < 0f)
         {
             verticalVelocity = groundedGravity;
-            animator.SetBool(JumpHash, false);
+
+            if (animator != null)
+                animator.SetBool(JumpHash, false);
         }
 
         if (jumpPressed && isGrounded && movementEnabled)
         {
             verticalVelocity = Mathf.Sqrt(jumpHeight * -2f * gravity);
-            animator.SetBool(JumpHash, true);
+
+            if (animator != null)
+                animator.SetBool(JumpHash, true);
         }
 
         jumpPressed = false;
@@ -186,6 +237,9 @@ public class ThirdPersonCharacterMotor : MonoBehaviour
 
     private void HandleMovement()
     {
+        if (!CanUseController)
+            return;
+
         Vector3 camForward = cameraTransform.forward;
         Vector3 camRight = cameraTransform.right;
 
@@ -194,12 +248,12 @@ public class ThirdPersonCharacterMotor : MonoBehaviour
         camForward.Normalize();
         camRight.Normalize();
 
-        Vector3 desiredMoveDirection = (camForward * moveInput.y + camRight * moveInput.x);
+        Vector3 desiredMoveDirection = camForward * moveInput.y + camRight * moveInput.x;
         float inputMagnitude = Mathf.Clamp01(moveInput.magnitude);
 
         bool hasMovementInput = inputMagnitude > 0.01f;
 
-        if (hasMovementInput)
+        if (hasMovementInput && desiredMoveDirection.sqrMagnitude > 0.0001f)
             lastMoveDirection = desiredMoveDirection.normalized;
 
         float targetMaxSpeed = walkSpeed;
@@ -215,7 +269,11 @@ public class ThirdPersonCharacterMotor : MonoBehaviour
         float speedChangeRate = hasMovementInput ? acceleration : deceleration;
         currentSpeed = Mathf.MoveTowards(currentSpeed, targetSpeed, speedChangeRate * Time.deltaTime);
 
-        Vector3 horizontalVelocity = desiredMoveDirection.normalized * currentSpeed;
+        Vector3 horizontalVelocity = Vector3.zero;
+
+        if (desiredMoveDirection.sqrMagnitude > 0.0001f)
+            horizontalVelocity = desiredMoveDirection.normalized * currentSpeed;
+
         Vector3 finalVelocity = horizontalVelocity + Vector3.up * verticalVelocity;
 
         controller.Move(finalVelocity * Time.deltaTime);
@@ -249,10 +307,10 @@ public class ThirdPersonCharacterMotor : MonoBehaviour
         }
         else
         {
-            Vector3 lookDirection = desiredMoveDirection.normalized;
-
-            if (lookDirection.sqrMagnitude < 0.0001f)
+            if (desiredMoveDirection.sqrMagnitude < 0.0001f)
                 return;
+
+            Vector3 lookDirection = desiredMoveDirection.normalized;
 
             float targetAngle = Mathf.Atan2(lookDirection.x, lookDirection.z) * Mathf.Rad2Deg;
             float smoothAngle = Mathf.SmoothDampAngle(
@@ -268,19 +326,12 @@ public class ThirdPersonCharacterMotor : MonoBehaviour
 
     private void HandleDirectionalAnimation(Vector3 desiredMoveDirection, bool hasMovementInput)
     {
-        Vector3 referenceDirection;
-
-        if (useStrafeMode)
-        {
-            referenceDirection = desiredMoveDirection;
-        }
-        else
-        {
-            referenceDirection = desiredMoveDirection;
-        }
+        Vector3 referenceDirection = desiredMoveDirection;
 
         Vector3 localDirection = transform.InverseTransformDirection(
-            hasMovementInput ? referenceDirection.normalized : Vector3.zero
+            hasMovementInput && referenceDirection.sqrMagnitude > 0.0001f
+                ? referenceDirection.normalized
+                : Vector3.zero
         );
 
         float targetX = hasMovementInput ? Mathf.Clamp(localDirection.x, -1f, 1f) * moveInput.magnitude : 0f;
@@ -292,6 +343,12 @@ public class ThirdPersonCharacterMotor : MonoBehaviour
 
     private void StopMotion()
     {
+        if (!CanUseController)
+        {
+            ResetMotionState();
+            return;
+        }
+
         currentSpeed = Mathf.MoveTowards(currentSpeed, 0f, deceleration * Time.deltaTime);
 
         Vector3 finalVelocity = Vector3.up * verticalVelocity;
@@ -301,15 +358,38 @@ public class ThirdPersonCharacterMotor : MonoBehaviour
         animMoveZ = Mathf.Lerp(animMoveZ, 0f, directionalLerpSpeed * Time.deltaTime);
     }
 
-    private void UpdateAnimator()
+    private void UpdateAnimatorSafe()
     {
-        float horizontalSpeed = new Vector3(controller.velocity.x, 0f, controller.velocity.z).magnitude;
-        bool isMoving = horizontalSpeed > 0.08f;
+        if (animator == null)
+            return;
+
+        float horizontalSpeed = 0f;
+
+        if (CanUseController)
+            horizontalSpeed = new Vector3(controller.velocity.x, 0f, controller.velocity.z).magnitude;
+
+        bool isMoving = horizontalSpeed > 0.08f && movementEnabled;
 
         animator.SetBool(IsMovingHash, isMoving);
         animator.SetFloat(SpeedHash, horizontalSpeed, animDamp, Time.deltaTime);
         animator.SetFloat(MoveXHash, animMoveX, animDamp, Time.deltaTime);
         animator.SetFloat(MoveZHash, animMoveZ, animDamp, Time.deltaTime);
+
+        if (!CanUseController)
+        {
+            animator.SetBool(GroundedHash, false);
+            animator.SetBool(JumpHash, false);
+        }
+    }
+
+    private void OnDisable()
+    {
+        ResetMotionState();
+    }
+
+    private void OnDestroy()
+    {
+        ResetMotionState();
     }
 
     private void OnDrawGizmosSelected()
