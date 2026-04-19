@@ -20,15 +20,19 @@ MonoBehaviour:
   haircutType: 0
   serviceType: 0
   customServiceId: 
-  price: 30
   servicePrice: 30
-  time: 10
   serviceTime: 10
-  serviceTimeMinutes: 10
   difficulty: 1
-  priceTable: {fileID: 0}
-  xpReward: 10
+  priceTable: {fileID: 11400000, guid: 24504ec38018014428d057cf832d353a, type: 2}
+  xpReward: 15
   requiredItems:
+  - requirementId: maquina_corte
+    displayName: "M\xE1quina de Corte"
+    category: 0
+    specificProductId: 
+    usageType: 0
+    hoursConsumed: 1
+    amountConsumed: 1
   - requirementId: pente
     displayName: Pente
     category: 2
@@ -39,5 +43,7 @@ MonoBehaviour:
   beforeHairId: cabelo_inicial
   afterHairId: fade_afro
   afroCutId: fade_afro
-  educationalTitle: Origem do Fade Afro
-  educationalSummary: "texto curto da origem/hist\xF3ria"
+  historyTitle: Origem do Fade Afro
+  historySummary: "Resumo da Hist\xF3ria...\nResumo da Hist\xF3ria...\nResumo da
+    Hist\xF3ria...\nResumo da Hist\xF3ria...\nResumo da Hist\xF3ria...\nResumo da
+    Hist\xF3ria...\nResumo da Hist\xF3ria...\nResumo da Hist\xF3ria..."

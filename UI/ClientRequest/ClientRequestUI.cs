@@ -20,14 +20,11 @@ public class ClientRequestUI : MonoBehaviour
     [SerializeField] private TMP_Text difficultyText;
     [SerializeField] private TMP_Text summaryText;
     [SerializeField] private Image readinessFillImage;
-    [SerializeField] private TMP_Text readinessText;
-    [SerializeField] private TMP_Text missingItemsWarningText;
 
-    [Header("Preview educacional (opcional)")]
+    [Header("Educação / História")]
     [SerializeField] private GameObject educationPanel;
     [SerializeField] private TMP_Text educationTitleText;
     [SerializeField] private TMP_Text educationSummaryText;
-    [SerializeField] private CutEducationPreviewUI educationPreviewUI;
 
     [Header("Itens requeridos")]
     [SerializeField] private Transform requirementsParent;
@@ -97,7 +94,7 @@ public class ClientRequestUI : MonoBehaviour
         Refresh();
 
         if (enableDebugLogs)
-            Debug.Log($"[ClientRequestUI] Show() aberto para {client.name} | Pedido: {currentRequest.requestName}");
+            Debug.Log($"[ClientRequestUI] Show() aberto para {client.name} | Pedido: {currentRequest.RequestName}");
     }
 
     private ClientRequestData GetClientRequest(ClientNPC client)
@@ -149,10 +146,13 @@ public class ClientRequestUI : MonoBehaviour
         currentRequest.SyncCompatibilityFields();
 
         if (requestIcon != null)
+        {
             requestIcon.sprite = currentRequest.icon;
+            requestIcon.enabled = currentRequest.icon != null;
+        }
 
         if (requestNameText != null)
-            requestNameText.text = currentRequest.requestName;
+            requestNameText.text = currentRequest.RequestName;
 
         if (descriptionText != null)
             descriptionText.text = currentRequest.GetDescription();
@@ -162,6 +162,9 @@ public class ClientRequestUI : MonoBehaviour
 
         if (timeText != null)
             timeText.text = $"{currentRequest.ServiceTimeRoundedMinutes} min";
+
+        if (xpText != null)
+            xpText.text = $"+{currentRequest.XPReward} XP";
 
         if (difficultyText != null)
             difficultyText.text = $"Dificuldade {currentRequest.difficulty}";
@@ -174,12 +177,6 @@ public class ClientRequestUI : MonoBehaviour
                            InventoryManager.Instance.HasAllRequirements(currentRequest.requiredItems) &&
                            ServiceLoadoutBuilder.IsLoadoutComplete(currentRequest, currentLoadout);
 
-        if (missingItemsWarningText != null)
-        {
-            missingItemsWarningText.gameObject.SetActive(!hasAllItems);
-            missingItemsWarningText.text = "Você não possui todos os itens necessários para realizar este atendimento.";
-        }
-
         if (acceptButton != null)
             acceptButton.gameObject.SetActive(hasAllItems);
 
@@ -189,46 +186,55 @@ public class ClientRequestUI : MonoBehaviour
 
     private void RefreshEducationalPanel()
     {
+        if (currentRequest == null)
+        {
+            if (educationPanel != null)
+                educationPanel.SetActive(false);
+
+            return;
+        }
+
         AfroCutInfo cutInfo = null;
 
         if (currentClient != null)
             cutInfo = currentClient.GetCurrentCutInfo();
 
-        bool hasEducation = currentRequest != null &&
-                            (currentRequest.HasEducationalContent() || cutInfo != null);
+        string title = currentRequest.HistoryTitle;
+        string summary = currentRequest.HistorySummary;
+
+        if (cutInfo != null)
+        {
+            if (string.IsNullOrWhiteSpace(title))
+                title = cutInfo.cutName;
+
+            if (string.IsNullOrWhiteSpace(summary))
+                summary = cutInfo.historicalSummary;
+        }
+
+        bool hasEducation =
+            !string.IsNullOrWhiteSpace(title) ||
+            !string.IsNullOrWhiteSpace(summary) ||
+            cutInfo != null;
 
         if (educationPanel != null)
             educationPanel.SetActive(hasEducation);
 
         if (!hasEducation)
-        {
-            if (educationPreviewUI != null)
-                educationPreviewUI.Clear();
             return;
-        }
 
         if (educationTitleText != null)
-        {
-            if (!string.IsNullOrWhiteSpace(currentRequest.educationalTitle))
-                educationTitleText.text = currentRequest.educationalTitle;
-            else if (cutInfo != null)
-                educationTitleText.text = cutInfo.cutName;
-            else
-                educationTitleText.text = "Contexto cultural";
-        }
+            educationTitleText.text = title;
 
         if (educationSummaryText != null)
-        {
-            if (!string.IsNullOrWhiteSpace(currentRequest.educationalSummary))
-                educationSummaryText.text = currentRequest.educationalSummary;
-            else if (cutInfo != null)
-                educationSummaryText.text = cutInfo.historicalSummary;
-            else
-                educationSummaryText.text = string.Empty;
-        }
+            educationSummaryText.text = summary;
 
-        if (educationPreviewUI != null && cutInfo != null)
-            educationPreviewUI.SetData(cutInfo);
+        if (enableDebugLogs)
+        {
+            Debug.Log(
+                $"[ClientRequestUI] Educação carregada | " +
+                $"Title: {title} | Summary: {summary}"
+            );
+        }
     }
 
     private void BuildRequirementSlots()
@@ -247,13 +253,16 @@ public class ClientRequestUI : MonoBehaviour
             spawnedRequirementSlots.Add(slot.gameObject);
 
             PreparedServiceItemSelection selection = currentLoadout.GetSelectionByRequirement(requirement.requirementId);
-            ProductInventoryState selectedState = selection != null && InventoryManager.Instance != null
-                ? InventoryManager.Instance.GetItemByUniqueId(selection.productUniqueId)
-                : null;
 
-            ProductData selectedProduct = selectedState != null && InventoryManager.Instance != null
-                ? InventoryManager.Instance.GetProductDataById(selectedState.productId)
-                : null;
+            ProductInventoryState selectedState =
+                selection != null && InventoryManager.Instance != null
+                    ? InventoryManager.Instance.GetItemByUniqueId(selection.productUniqueId)
+                    : null;
+
+            ProductData selectedProduct =
+                selectedState != null && InventoryManager.Instance != null
+                    ? InventoryManager.Instance.GetProductDataById(selectedState.productId)
+                    : null;
 
             bool available = InventoryManager.Instance != null &&
                              InventoryManager.Instance.HasUsableItemForRequirement(requirement);
@@ -268,9 +277,6 @@ public class ClientRequestUI : MonoBehaviour
         {
             if (summaryText != null)
                 summaryText.text = "Nenhum item exigido.";
-
-            if (readinessText != null)
-                readinessText.text = "100%";
 
             if (readinessFillImage != null)
                 readinessFillImage.fillAmount = 1f;
@@ -317,9 +323,6 @@ public class ClientRequestUI : MonoBehaviour
                 summaryText.text = "Faltam itens necessários para esse atendimento.";
         }
 
-        if (readinessText != null)
-            readinessText.text = $"{Mathf.RoundToInt(percent * 100f)}%";
-
         if (readinessFillImage != null)
             readinessFillImage.fillAmount = percent;
     }
@@ -365,6 +368,9 @@ public class ClientRequestUI : MonoBehaviour
 
     private void SelectRequirementItem(ServiceRequirementData requirement, ProductInventoryState option)
     {
+        if (currentLoadout == null || requirement == null || option == null)
+            return;
+
         PreparedServiceItemSelection existing = currentLoadout.GetSelectionByRequirement(requirement.requirementId);
 
         if (existing == null)
@@ -380,8 +386,8 @@ public class ClientRequestUI : MonoBehaviour
         existing.productUniqueId = option.uniqueId;
         existing.productId = option.productId;
 
-        if (ServiceSelectionMemory.Instance != null)
-            ServiceSelectionMemory.Instance.SaveLastProductId(currentRequest.id, requirement.requirementId, option.productId);
+        if (ServiceSelectionMemory.Instance != null && currentRequest != null)
+            ServiceSelectionMemory.Instance.SaveLastProductId(currentRequest.RequestId, requirement.requirementId, option.productId);
 
         CloseOverlay();
         Refresh();
@@ -448,9 +454,6 @@ public class ClientRequestUI : MonoBehaviour
 
         if (overlayPanel != null)
             overlayPanel.SetActive(false);
-
-        if (educationPreviewUI != null)
-            educationPreviewUI.Clear();
 
         ClearRequirementSlots();
         ClearChoiceItems();

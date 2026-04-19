@@ -4,7 +4,7 @@ using UnityEngine;
 [CreateAssetMenu(fileName = "ClientRequestData", menuName = "AfroBarber/Client/Request Data")]
 public class ClientRequestData : ScriptableObject
 {
-    [Header("Compatibilidade / Identificação")]
+    [Header("Identificação")]
     public string id;
     public string requestId;
     public string requestName;
@@ -21,11 +21,8 @@ public class ClientRequestData : ScriptableObject
     public string customServiceId;
 
     [Header("Preço / Tempo / Dificuldade")]
-    public int price = 30;
     public int servicePrice = 30;
-    public float time = 10f;
     public float serviceTime = 10f;
-    public float serviceTimeMinutes = 10f;
     public int difficulty = 1;
 
     [Header("Tabela de Preços")]
@@ -41,14 +38,15 @@ public class ClientRequestData : ScriptableObject
     public string beforeHairId;
     public string afterHairId;
 
-    [Header("Educação / História")]
+    [Header("História")]
     public string afroCutId;
 
-    [TextArea(2, 5)]
-    public string educationalTitle;
+    [Tooltip("Título da história exibida na UI.")]
+    public string historyTitle;
 
     [TextArea(4, 10)]
-    public string educationalSummary;
+    [Tooltip("Resumo/história do serviço ou corte exibido na UI.")]
+    public string historySummary;
 
     public string RequestId
     {
@@ -85,10 +83,7 @@ public class ClientRequestData : ScriptableObject
             if (priceTable != null)
                 return priceTable.GetPrice(serviceType, customServiceId);
 
-            if (servicePrice > 0)
-                return servicePrice;
-
-            return Mathf.Max(0, price);
+            return Mathf.Max(0, servicePrice);
         }
     }
 
@@ -96,13 +91,7 @@ public class ClientRequestData : ScriptableObject
     {
         get
         {
-            if (serviceTimeMinutes > 0f)
-                return serviceTimeMinutes;
-
-            if (serviceTime > 0f)
-                return serviceTime;
-
-            return Mathf.Max(1f, time);
+            return Mathf.Max(1f, serviceTime);
         }
     }
 
@@ -111,6 +100,36 @@ public class ClientRequestData : ScriptableObject
         get
         {
             return Mathf.RoundToInt(ServiceTime);
+        }
+    }
+
+    public int XPReward
+    {
+        get
+        {
+            return Mathf.Max(0, xpReward);
+        }
+    }
+
+    public string HistoryTitle
+    {
+        get
+        {
+            if (!string.IsNullOrWhiteSpace(historyTitle))
+                return historyTitle;
+
+            return "História do serviço";
+        }
+    }
+
+    public string HistorySummary
+    {
+        get
+        {
+            if (!string.IsNullOrWhiteSpace(historySummary))
+                return historySummary;
+
+            return string.Empty;
         }
     }
 
@@ -124,8 +143,8 @@ public class ClientRequestData : ScriptableObject
 
     public bool HasEducationalContent()
     {
-        return !string.IsNullOrWhiteSpace(educationalTitle) ||
-               !string.IsNullOrWhiteSpace(educationalSummary) ||
+        return !string.IsNullOrWhiteSpace(historyTitle) ||
+               !string.IsNullOrWhiteSpace(historySummary) ||
                !string.IsNullOrWhiteSpace(afroCutId);
     }
 
@@ -140,20 +159,14 @@ public class ClientRequestData : ScriptableObject
         if (string.IsNullOrWhiteSpace(requestName))
             requestName = name;
 
-        if (serviceTimeMinutes <= 0f && serviceTime > 0f)
-            serviceTimeMinutes = serviceTime;
+        if (servicePrice < 0)
+            servicePrice = 0;
 
-        if (serviceTime <= 0f && serviceTimeMinutes > 0f)
-            serviceTime = serviceTimeMinutes;
+        if (serviceTime < 1f)
+            serviceTime = 1f;
 
-        if (time <= 0f && serviceTimeMinutes > 0f)
-            time = serviceTimeMinutes;
-
-        if (servicePrice <= 0 && price > 0)
-            servicePrice = price;
-
-        if (price <= 0 && servicePrice > 0)
-            price = servicePrice;
+        if (xpReward < 0)
+            xpReward = 0;
     }
 
 #if UNITY_EDITOR
@@ -163,24 +176,6 @@ public class ClientRequestData : ScriptableObject
 
         if (difficulty < 1)
             difficulty = 1;
-
-        if (price < 0)
-            price = 0;
-
-        if (servicePrice < 0)
-            servicePrice = 0;
-
-        if (xpReward < 0)
-            xpReward = 0;
-
-        if (serviceTimeMinutes < 1f)
-            serviceTimeMinutes = 1f;
-
-        if (serviceTime < 1f)
-            serviceTime = serviceTimeMinutes;
-
-        if (time < 1f)
-            time = serviceTimeMinutes;
     }
 #endif
 }
