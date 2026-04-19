@@ -12,11 +12,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1eeab403edf2ea541a333e18d65775b0, type: 3}
   m_Name: Request_FadeAfro
   m_EditorClassIdentifier: Assembly-CSharp::ClientRequestData
-  id: 
-  requestId: 
-  requestName: 
+  id: fade_afro
+  requestId: fade_afro
+  requestName: Fade Afro
   icon: {fileID: 0}
-  description: 
+  description: Cliente quer um fade afro bem definido.
   haircutType: 0
   serviceType: 0
   customServiceId: 
@@ -28,9 +28,16 @@ MonoBehaviour:
   difficulty: 1
   priceTable: {fileID: 0}
   xpReward: 10
-  requiredItems: []
-  beforeHairId: 
-  afterHairId: 
-  afroCutId: 
-  educationalTitle: 
-  educationalSummary: 
+  requiredItems:
+  - requirementId: pente
+    displayName: Pente
+    category: 2
+    specificProductId: 
+    usageType: 1
+    hoursConsumed: 2
+    amountConsumed: 1
+  beforeHairId: cabelo_inicial
+  afterHairId: fade_afro
+  afroCutId: fade_afro
+  educationalTitle: Origem do Fade Afro
+  educationalSummary: "texto curto da origem/hist\xF3ria"
