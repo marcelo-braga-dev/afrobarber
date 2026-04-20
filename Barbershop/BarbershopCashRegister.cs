@@ -12,7 +12,8 @@ public class BarbershopCashRegister : MonoBehaviour
 
     public UnityEvent<int> OnMoneyChanged;
 
-    private const string SaveKey = "AFROBARBER_CASH_REGISTER_MONEY";
+    //private const string SaveKey = "AFROBARBER_CASH_REGISTER_MONEY";
+    private const string SaveKey = "AFROBARBER_PLAYER_MONEY";
 
     private void Awake()
     {

@@ -429,18 +429,19 @@ public class BarbershopServiceManager : MonoBehaviour
         if (request == null)
             return;
 
-        int value = request.ServicePrice;
-
-        if (BarbershopCashRegister.Instance != null)
+        if (FinanceManager.Instance != null)
         {
-            BarbershopCashRegister.Instance.AddMoney(value);
+            FinanceManager.Instance.RegisterServiceIncome(
+                request,
+                currentClient != null ? currentClient.name : ""
+            );
         }
         else
         {
-            Debug.LogWarning("[BarbershopServiceManager] BarbershopCashRegister.Instance não encontrado. Dinheiro não foi adicionado ao caixa.");
+            Debug.LogWarning("[BarbershopServiceManager] FinanceManager.Instance não encontrado. Dinheiro não foi adicionado ao caixa.");
         }
 
-        Debug.Log($"[BarbershopServiceManager] Pagamento recebido: R$ {value} | Serviço: {request.RequestName}");
+        Debug.Log($"[BarbershopServiceManager] Pagamento recebido: R$ {request.ServicePrice} | Serviço: {request.RequestName}");
     }
 
     public void NotifyClientFinishedCashier(ClientNPC client)
