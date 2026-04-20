@@ -115,6 +115,7 @@ public class ClientNPC : MonoBehaviour
         if (HasReachedDestination())
             HandleReachedDestination();
     }
+
     public void SetPlayerTransform(Transform player)
     {
         playerTransform = player;
@@ -305,7 +306,6 @@ public class ClientNPC : MonoBehaviour
         }
 
         RemoveFromQueue();
-
         ReleaseReservedSeat();
 
         HideInteractionIcon();
