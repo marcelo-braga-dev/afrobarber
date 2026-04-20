@@ -11,10 +11,11 @@ public class BarbershopServiceManager : MonoBehaviour
     [SerializeField] private Transform cashierPoint;
     [SerializeField] private Transform exitPoint;
 
-    [Header("IntegraÁıes")]
+    [Header("Integra√ß√µes")]
     [SerializeField] private BarberWorkController barberWorkController;
+    [SerializeField] private AdvancedServiceWorkflowManager advancedWorkflowManager;
 
-    [Header("ConfiguraÁ„o do atendimento")]
+    [Header("Configura√ß√£o do atendimento")]
     [SerializeField] private bool autoCompleteServiceByTime = true;
     [SerializeField] private bool consumeInventoryOnFinish = true;
     [SerializeField] private bool sendClientAwayIfMissingItems = false;
@@ -46,6 +47,9 @@ public class BarbershopServiceManager : MonoBehaviour
 
         if (barberWorkController == null)
             barberWorkController = FindFirstObjectByType<BarberWorkController>();
+
+        if (advancedWorkflowManager == null)
+            advancedWorkflowManager = FindFirstObjectByType<AdvancedServiceWorkflowManager>();
     }
 
     public bool HasClientInService()
@@ -60,13 +64,13 @@ public class BarbershopServiceManager : MonoBehaviour
 
         if (currentClient != null)
         {
-            Debug.LogWarning("[BarbershopServiceManager] J· existe um cliente em atendimento.");
+            Debug.LogWarning("[BarbershopServiceManager] J√° existe um cliente em atendimento.");
             return false;
         }
 
         if (client.RequestData == null)
         {
-            Debug.LogWarning($"[BarbershopServiceManager] Cliente {client.name} n„o possui pedido configurado.");
+            Debug.LogWarning($"[BarbershopServiceManager] Cliente {client.name} n√£o possui pedido configurado.");
             return false;
         }
 
@@ -78,7 +82,7 @@ public class BarbershopServiceManager : MonoBehaviour
 
         if (barberChairWalkPoint == null)
         {
-            Debug.LogWarning("[BarbershopServiceManager] barberChairWalkPoint n„o configurado.");
+            Debug.LogWarning("[BarbershopServiceManager] barberChairWalkPoint n√£o configurado.");
             return false;
         }
 
@@ -129,6 +133,27 @@ public class BarbershopServiceManager : MonoBehaviour
 
         client.StartService(barberChairWalkPoint, barberChairSitPoint);
 
+        if (advancedWorkflowManager != null && advancedWorkflowManager.EnableAdvancedWorkflow)
+        {
+            advancedWorkflowManager.TryPreparePlan(client);
+            bool started = advancedWorkflowManager.TryExecutePlan(client, _ =>
+            {
+                if (currentClient == client)
+                    CompleteCurrentService();
+            });
+
+            if (started)
+            {
+                if (currentServiceRoutine != null)
+                {
+                    StopCoroutine(currentServiceRoutine);
+                    currentServiceRoutine = null;
+                }
+
+                return true;
+            }
+        }
+
         if (currentServiceRoutine != null)
             StopCoroutine(currentServiceRoutine);
 
@@ -145,7 +170,7 @@ public class BarbershopServiceManager : MonoBehaviour
 
         if (InventoryManager.Instance == null)
         {
-            Debug.LogWarning("[BarbershopServiceManager] InventoryManager.Instance n„o encontrado.");
+            Debug.LogWarning("[BarbershopServiceManager] InventoryManager.Instance n√£o encontrado.");
             return new PreparedServiceLoadout();
         }
 
@@ -165,7 +190,7 @@ public class BarbershopServiceManager : MonoBehaviour
         float seconds = ConvertGameMinutesToRealSeconds(duration);
 
         if (enableDebugLogs)
-            Debug.Log($"[BarbershopServiceManager] Atendimento autom·tico durar· {seconds:0.0}s reais.");
+            Debug.Log($"[BarbershopServiceManager] Atendimento autom√°tico durar√° {seconds:0.0}s reais.");
 
         yield return new WaitForSeconds(seconds);
 
@@ -182,7 +207,7 @@ public class BarbershopServiceManager : MonoBehaviour
     {
         if (currentClient == null)
         {
-            Debug.LogWarning("[BarbershopServiceManager] N„o existe cliente atual para concluir atendimento.");
+            Debug.LogWarning("[BarbershopServiceManager] N√£o existe cliente atual para concluir atendimento.");
             return;
         }
 
@@ -191,7 +216,7 @@ public class BarbershopServiceManager : MonoBehaviour
 
         if (request == null)
         {
-            Debug.LogWarning("[BarbershopServiceManager] Cliente atual n„o possui RequestData.");
+            Debug.LogWarning("[BarbershopServiceManager] Cliente atual n√£o possui RequestData.");
             SendCurrentClientToExitOrCashier();
             return;
         }
@@ -237,7 +262,7 @@ public class BarbershopServiceManager : MonoBehaviour
         if (enableDebugLogs)
         {
             Debug.Log(
-                $"[BarbershopServiceManager] Atendimento concluÌdo | Cliente: {finishedClient.name} | " +
+                $"[BarbershopServiceManager] Atendimento conclu√≠do | Cliente: {finishedClient.name} | " +
                 $"Pedido: {request.RequestName} | Valor: {request.ServicePrice}"
             );
         }
@@ -294,13 +319,13 @@ public class BarbershopServiceManager : MonoBehaviour
 
         if (loadout == null)
         {
-            Debug.LogWarning("[BarbershopServiceManager] Loadout nulo. N„o foi possÌvel consumir itens.");
+            Debug.LogWarning("[BarbershopServiceManager] Loadout nulo. N√£o foi poss√≠vel consumir itens.");
             return;
         }
 
         if (InventoryManager.Instance == null)
         {
-            Debug.LogWarning("[BarbershopServiceManager] InventoryManager.Instance n„o encontrado. Itens n„o consumidos.");
+            Debug.LogWarning("[BarbershopServiceManager] InventoryManager.Instance n√£o encontrado. Itens n√£o consumidos.");
             return;
         }
 
@@ -313,7 +338,7 @@ public class BarbershopServiceManager : MonoBehaviour
 
             if (selection == null)
             {
-                Debug.LogWarning($"[BarbershopServiceManager] Nenhuma seleÁ„o encontrada para requisito: {requirement.GetDisplayName()}");
+                Debug.LogWarning($"[BarbershopServiceManager] Nenhuma sele√ß√£o encontrada para requisito: {requirement.GetDisplayName()}");
                 continue;
             }
 
@@ -438,10 +463,10 @@ public class BarbershopServiceManager : MonoBehaviour
         }
         else
         {
-            Debug.LogWarning("[BarbershopServiceManager] FinanceManager.Instance n„o encontrado. Dinheiro n„o foi adicionado ao caixa.");
+            Debug.LogWarning("[BarbershopServiceManager] FinanceManager.Instance n√£o encontrado. Dinheiro n√£o foi adicionado ao caixa.");
         }
 
-        Debug.Log($"[BarbershopServiceManager] Pagamento recebido: R$ {request.ServicePrice} | ServiÁo: {request.RequestName}");
+        Debug.Log($"[BarbershopServiceManager] Pagamento recebido: R$ {request.ServicePrice} | Servi√ßo: {request.RequestName}");
     }
 
     public void NotifyClientFinishedCashier(ClientNPC client)
@@ -490,7 +515,7 @@ public class BarbershopServiceManager : MonoBehaviour
 
         if (PlayerXPManager.Instance == null)
         {
-            Debug.LogWarning("[BarbershopServiceManager] PlayerXPManager.Instance n„o encontrado. XP n„o foi adicionado.");
+            Debug.LogWarning("[BarbershopServiceManager] PlayerXPManager.Instance n√£o encontrado. XP n√£o foi adicionado.");
             return;
         }
 
@@ -501,7 +526,7 @@ public class BarbershopServiceManager : MonoBehaviour
     {
         if (BarbershopRatingManager.Instance == null)
         {
-            Debug.LogWarning("[BarbershopServiceManager] BarbershopRatingManager.Instance n„o encontrado. AvaliaÁ„o n„o foi registrada.");
+            Debug.LogWarning("[BarbershopServiceManager] BarbershopRatingManager.Instance n√£o encontrado. Avalia√ß√£o n√£o foi registrada.");
             return;
         }
 

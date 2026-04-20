@@ -16,16 +16,19 @@ public class ClientNPC : MonoBehaviour
         Leaving
     }
 
-    [Header("ReferÍncias")]
+    [Header("Refer√™ncias")]
     [SerializeField] private NavMeshAgent agent;
     [SerializeField] private Animator animator;
     [SerializeField] private GameObject interactionIcon;
     [SerializeField] private ClientHairVisualController hairVisualController;
+    [SerializeField] private NPCIdentity npcIdentity;
+    [SerializeField] private NPCInteractionIndicator interactionIndicator;
+    [SerializeField] private NPCRelationshipMemory relationshipMemory;
 
     [Header("Perfil fixo do cliente")]
     [SerializeField] private ClientServiceProfile serviceProfile;
 
-    [Header("ConfiguraÁ„o")]
+    [Header("Configura√ß√£o")]
     [SerializeField] private string clientDisplayName = "Cliente";
     [SerializeField] private float arrivalDistance = 0.35f;
     [SerializeField] private float cashierWaitTime = 2f;
@@ -73,6 +76,8 @@ public class ClientNPC : MonoBehaviour
     public PreparedServiceLoadout PreparedLoadout => preparedLoadout;
     public bool ServiceCompleted => serviceCompleted;
     public float MaxPatienceMinutes => maxPatienceMinutes;
+    public NPCIdentity Identity => npcIdentity;
+    public NPCRelationshipMemory RelationshipMemory => relationshipMemory;
 
     private void Awake()
     {
@@ -84,6 +89,15 @@ public class ClientNPC : MonoBehaviour
 
         if (hairVisualController == null)
             hairVisualController = GetComponentInChildren<ClientHairVisualController>(true);
+
+        if (npcIdentity == null)
+            npcIdentity = GetComponent<NPCIdentity>();
+
+        if (interactionIndicator == null)
+            interactionIndicator = GetComponentInChildren<NPCInteractionIndicator>(true);
+
+        if (relationshipMemory == null)
+            relationshipMemory = GetComponent<NPCRelationshipMemory>();
 
         HideInteractionIcon();
     }
@@ -122,7 +136,7 @@ public class ClientNPC : MonoBehaviour
         preparedLoadout = loadout;
 
         if (enableDebugLogs)
-            Debug.Log($"[{name}] Loadout preparado atribuÌdo.");
+            Debug.Log($"[{name}] Loadout preparado atribu√≠do.");
     }
 
     public void Initialize(
@@ -236,20 +250,20 @@ public class ClientNPC : MonoBehaviour
         if (currentState != ClientState.WaitingForService)
         {
             if (enableDebugLogs)
-                Debug.LogWarning($"[{name}] Clique ignorado porque o estado n„o È WaitingForService.");
+                Debug.LogWarning($"[{name}] Clique ignorado porque o estado n√£o √© WaitingForService.");
 
             return;
         }
 
         if (ClientRequestUI.Instance == null)
         {
-            Debug.LogWarning("ClientRequestUI.Instance n„o encontrado.");
+            Debug.LogWarning("ClientRequestUI.Instance n√£o encontrado.");
             return;
         }
 
         if (currentRequest == null)
         {
-            Debug.LogWarning($"[{name}] currentRequest est· nulo.");
+            Debug.LogWarning($"[{name}] currentRequest est√° nulo.");
             return;
         }
 
@@ -263,11 +277,12 @@ public class ClientNPC : MonoBehaviour
 
         if (BarbershopServiceManager.Instance == null)
         {
-            Debug.LogWarning($"[{name}] BarbershopServiceManager.Instance n„o encontrado.");
+            Debug.LogWarning($"[{name}] BarbershopServiceManager.Instance n√£o encontrado.");
             return;
         }
 
         BarbershopServiceManager.Instance.TryStartService(this);
+        GlobalDialogueManager.Instance?.AddNpcMessage(npcIdentity, "Posso sentar na cadeira?", DialogueContextType.Queue);
     }
 
     public void StartService(Transform walkPoint, Transform sitPoint)
@@ -285,7 +300,7 @@ public class ClientNPC : MonoBehaviour
 
         if (barberChairWalkPoint == null)
         {
-            Debug.LogWarning($"[{name}] barberChairWalkPoint n„o configurado.");
+            Debug.LogWarning($"[{name}] barberChairWalkPoint n√£o configurado.");
             return;
         }
 
@@ -319,14 +334,14 @@ public class ClientNPC : MonoBehaviour
         ApplyFinalHair();
 
         if (enableDebugLogs)
-            Debug.Log($"[{name}] ServiÁo marcado como concluÌdo.");
+            Debug.Log($"[{name}] Servi√ßo marcado como conclu√≠do.");
     }
 
     public void GoToCashier(Transform cashierPoint)
     {
         if (cashierPoint == null)
         {
-            Debug.LogWarning($"[{name}] cashierPoint n„o configurado.");
+            Debug.LogWarning($"[{name}] cashierPoint n√£o configurado.");
             LeaveShop(exitPoint);
             return;
         }
@@ -390,7 +405,7 @@ public class ClientNPC : MonoBehaviour
 
         if (waitingApproachPoint == null)
         {
-            Debug.LogWarning($"[{name}] Nenhum assento disponÌvel. Cliente ser· dispensado.");
+            Debug.LogWarning($"[{name}] Nenhum assento dispon√≠vel. Cliente ser√° dispensado.");
             LeaveShop(exitPoint);
             return;
         }
@@ -484,11 +499,13 @@ public class ClientNPC : MonoBehaviour
         currentState = ClientState.WaitingForService;
         ShowInteractionIcon();
         SetSit(true);
+        interactionIndicator?.SetState(InteractionAvailabilityType.Conversation);
 
         AddToQueue();
+        GlobalDialogueManager.Instance?.AddNpcMessage(npcIdentity, "Cheguei, vou aguardar minha vez.", DialogueContextType.Queue);
 
         if (enableDebugLogs)
-            Debug.Log($"[{name}] Agora est· WaitingForService. UI pode abrir no clique.");
+            Debug.Log($"[{name}] Agora est√° WaitingForService. UI pode abrir no clique.");
     }
 
     private void ArriveAtBarberChairWalkPoint()
@@ -503,6 +520,7 @@ public class ClientNPC : MonoBehaviour
 
         currentState = ClientState.InService;
         SetSit(true);
+        interactionIndicator?.SetState(InteractionAvailabilityType.None);
 
         if (enableDebugLogs)
             Debug.Log($"[{name}] Sentado na cadeira de barbeiro.");
@@ -626,11 +644,15 @@ public class ClientNPC : MonoBehaviour
     {
         if (interactionIcon != null)
             interactionIcon.SetActive(true);
+
+        interactionIndicator?.SetState(InteractionAvailabilityType.Conversation);
     }
 
     private void HideInteractionIcon()
     {
         if (interactionIcon != null)
             interactionIcon.SetActive(false);
+
+        interactionIndicator?.SetState(InteractionAvailabilityType.None);
     }
 }
