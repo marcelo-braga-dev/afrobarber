@@ -13,6 +13,7 @@ public class BarbershopServiceManager : MonoBehaviour
 
     [Header("Integrações")]
     [SerializeField] private BarberWorkController barberWorkController;
+    [SerializeField] private AdvancedServiceWorkflowManager advancedWorkflowManager;
 
     [Header("Configuração do atendimento")]
     [SerializeField] private bool autoCompleteServiceByTime = true;
@@ -46,6 +47,9 @@ public class BarbershopServiceManager : MonoBehaviour
 
         if (barberWorkController == null)
             barberWorkController = FindFirstObjectByType<BarberWorkController>();
+
+        if (advancedWorkflowManager == null)
+            advancedWorkflowManager = FindFirstObjectByType<AdvancedServiceWorkflowManager>();
     }
 
     public bool HasClientInService()
@@ -128,6 +132,27 @@ public class BarbershopServiceManager : MonoBehaviour
             Debug.Log($"[BarbershopServiceManager] Iniciando atendimento de {client.name} | Pedido: {request.RequestName}");
 
         client.StartService(barberChairWalkPoint, barberChairSitPoint);
+
+        if (advancedWorkflowManager != null && advancedWorkflowManager.EnableAdvancedWorkflow)
+        {
+            advancedWorkflowManager.TryPreparePlan(client);
+            bool started = advancedWorkflowManager.TryExecutePlan(client, _ =>
+            {
+                if (currentClient == client)
+                    CompleteCurrentService();
+            });
+
+            if (started)
+            {
+                if (currentServiceRoutine != null)
+                {
+                    StopCoroutine(currentServiceRoutine);
+                    currentServiceRoutine = null;
+                }
+
+                return true;
+            }
+        }
 
         if (currentServiceRoutine != null)
             StopCoroutine(currentServiceRoutine);

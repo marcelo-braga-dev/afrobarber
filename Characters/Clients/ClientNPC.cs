@@ -21,6 +21,9 @@ public class ClientNPC : MonoBehaviour
     [SerializeField] private Animator animator;
     [SerializeField] private GameObject interactionIcon;
     [SerializeField] private ClientHairVisualController hairVisualController;
+    [SerializeField] private NPCIdentity npcIdentity;
+    [SerializeField] private NPCInteractionIndicator interactionIndicator;
+    [SerializeField] private NPCRelationshipMemory relationshipMemory;
 
     [Header("Perfil fixo do cliente")]
     [SerializeField] private ClientServiceProfile serviceProfile;
@@ -73,6 +76,8 @@ public class ClientNPC : MonoBehaviour
     public PreparedServiceLoadout PreparedLoadout => preparedLoadout;
     public bool ServiceCompleted => serviceCompleted;
     public float MaxPatienceMinutes => maxPatienceMinutes;
+    public NPCIdentity Identity => npcIdentity;
+    public NPCRelationshipMemory RelationshipMemory => relationshipMemory;
 
     private void Awake()
     {
@@ -84,6 +89,15 @@ public class ClientNPC : MonoBehaviour
 
         if (hairVisualController == null)
             hairVisualController = GetComponentInChildren<ClientHairVisualController>(true);
+
+        if (npcIdentity == null)
+            npcIdentity = GetComponent<NPCIdentity>();
+
+        if (interactionIndicator == null)
+            interactionIndicator = GetComponentInChildren<NPCInteractionIndicator>(true);
+
+        if (relationshipMemory == null)
+            relationshipMemory = GetComponent<NPCRelationshipMemory>();
 
         HideInteractionIcon();
     }
@@ -101,6 +115,7 @@ public class ClientNPC : MonoBehaviour
         if (HasReachedDestination())
             HandleReachedDestination();
     }
+
     public void SetPlayerTransform(Transform player)
     {
         playerTransform = player;
@@ -268,6 +283,7 @@ public class ClientNPC : MonoBehaviour
         }
 
         BarbershopServiceManager.Instance.TryStartService(this);
+        GlobalDialogueManager.Instance?.AddNpcMessage(npcIdentity, "Posso sentar na cadeira?", DialogueContextType.Queue);
     }
 
     public void StartService(Transform walkPoint, Transform sitPoint)
@@ -290,7 +306,6 @@ public class ClientNPC : MonoBehaviour
         }
 
         RemoveFromQueue();
-
         ReleaseReservedSeat();
 
         HideInteractionIcon();
@@ -484,8 +499,10 @@ public class ClientNPC : MonoBehaviour
         currentState = ClientState.WaitingForService;
         ShowInteractionIcon();
         SetSit(true);
+        interactionIndicator?.SetState(InteractionAvailabilityType.Conversation);
 
         AddToQueue();
+        GlobalDialogueManager.Instance?.AddNpcMessage(npcIdentity, "Cheguei, vou aguardar minha vez.", DialogueContextType.Queue);
 
         if (enableDebugLogs)
             Debug.Log($"[{name}] Agora está WaitingForService. UI pode abrir no clique.");
@@ -503,6 +520,7 @@ public class ClientNPC : MonoBehaviour
 
         currentState = ClientState.InService;
         SetSit(true);
+        interactionIndicator?.SetState(InteractionAvailabilityType.None);
 
         if (enableDebugLogs)
             Debug.Log($"[{name}] Sentado na cadeira de barbeiro.");
@@ -626,11 +644,15 @@ public class ClientNPC : MonoBehaviour
     {
         if (interactionIcon != null)
             interactionIcon.SetActive(true);
+
+        interactionIndicator?.SetState(InteractionAvailabilityType.Conversation);
     }
 
     private void HideInteractionIcon()
     {
         if (interactionIcon != null)
             interactionIcon.SetActive(false);
+
+        interactionIndicator?.SetState(InteractionAvailabilityType.None);
     }
 }
