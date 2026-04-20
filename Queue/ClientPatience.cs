@@ -91,12 +91,10 @@ public class ClientPatience : MonoBehaviour
                 line = "Ainda vai demorar muito?";
                 indicatorState = InteractionAvailabilityType.NeedResponse;
                 break;
-
             case PatienceState.Angry:
                 line = "Já estou esperando faz tempo...";
                 indicatorState = InteractionAvailabilityType.Urgent;
                 break;
-
             case PatienceState.LeavingSoon:
                 line = "Você vai conseguir me atender hoje?";
                 indicatorState = InteractionAvailabilityType.Urgent;

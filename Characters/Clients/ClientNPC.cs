@@ -16,7 +16,7 @@ public class ClientNPC : MonoBehaviour
         Leaving
     }
 
-    [Header("ReferÍncias")]
+    [Header("Refer√™ncias")]
     [SerializeField] private NavMeshAgent agent;
     [SerializeField] private Animator animator;
     [SerializeField] private GameObject interactionIcon;
@@ -28,7 +28,7 @@ public class ClientNPC : MonoBehaviour
     [Header("Perfil fixo do cliente")]
     [SerializeField] private ClientServiceProfile serviceProfile;
 
-    [Header("ConfiguraÁ„o")]
+    [Header("Configura√ß√£o")]
     [SerializeField] private string clientDisplayName = "Cliente";
     [SerializeField] private float arrivalDistance = 0.35f;
     [SerializeField] private float cashierWaitTime = 2f;
@@ -137,7 +137,7 @@ public class ClientNPC : MonoBehaviour
         preparedLoadout = loadout;
 
         if (enableDebugLogs)
-            Debug.Log($"[{name}] Loadout preparado atribuÌdo.");
+            Debug.Log($"[{name}] Loadout preparado atribu√≠do.");
     }
 
     public void Initialize(
@@ -251,20 +251,20 @@ public class ClientNPC : MonoBehaviour
         if (currentState != ClientState.WaitingForService)
         {
             if (enableDebugLogs)
-                Debug.LogWarning($"[{name}] Clique ignorado porque o estado n„o È WaitingForService.");
+                Debug.LogWarning($"[{name}] Clique ignorado porque o estado n√£o √© WaitingForService.");
 
             return;
         }
 
         if (ClientRequestUI.Instance == null)
         {
-            Debug.LogWarning("ClientRequestUI.Instance n„o encontrado.");
+            Debug.LogWarning("ClientRequestUI.Instance n√£o encontrado.");
             return;
         }
 
         if (currentRequest == null)
         {
-            Debug.LogWarning($"[{name}] currentRequest est· nulo.");
+            Debug.LogWarning($"[{name}] currentRequest est√° nulo.");
             return;
         }
 
@@ -278,7 +278,7 @@ public class ClientNPC : MonoBehaviour
 
         if (BarbershopServiceManager.Instance == null)
         {
-            Debug.LogWarning($"[{name}] BarbershopServiceManager.Instance n„o encontrado.");
+            Debug.LogWarning($"[{name}] BarbershopServiceManager.Instance n√£o encontrado.");
             return;
         }
 
@@ -301,7 +301,7 @@ public class ClientNPC : MonoBehaviour
 
         if (barberChairWalkPoint == null)
         {
-            Debug.LogWarning($"[{name}] barberChairWalkPoint n„o configurado.");
+            Debug.LogWarning($"[{name}] barberChairWalkPoint n√£o configurado.");
             return;
         }
 
@@ -334,14 +334,14 @@ public class ClientNPC : MonoBehaviour
         ApplyFinalHair();
 
         if (enableDebugLogs)
-            Debug.Log($"[{name}] ServiÁo marcado como concluÌdo.");
+            Debug.Log($"[{name}] Servi√ßo marcado como conclu√≠do.");
     }
 
     public void GoToCashier(Transform cashierPoint)
     {
         if (cashierPoint == null)
         {
-            Debug.LogWarning($"[{name}] cashierPoint n„o configurado.");
+            Debug.LogWarning($"[{name}] cashierPoint n√£o configurado.");
             LeaveShop(exitPoint);
             return;
         }
@@ -405,7 +405,7 @@ public class ClientNPC : MonoBehaviour
 
         if (waitingApproachPoint == null)
         {
-            Debug.LogWarning($"[{name}] Nenhum assento disponÌvel. Cliente ser· dispensado.");
+            Debug.LogWarning($"[{name}] Nenhum assento dispon√≠vel. Cliente ser√° dispensado.");
             LeaveShop(exitPoint);
             return;
         }
@@ -505,7 +505,7 @@ public class ClientNPC : MonoBehaviour
         GlobalDialogueManager.Instance?.AddNpcMessage(npcIdentity, "Cheguei, vou aguardar minha vez.", DialogueContextType.Queue);
 
         if (enableDebugLogs)
-            Debug.Log($"[{name}] Agora est· WaitingForService. UI pode abrir no clique.");
+            Debug.Log($"[{name}] Agora est√° WaitingForService. UI pode abrir no clique.");
     }
 
     private void ArriveAtBarberChairWalkPoint()
