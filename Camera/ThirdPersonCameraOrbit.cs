@@ -10,7 +10,7 @@ public class ThirdPersonCameraOrbit : MonoBehaviour
     [Header("Distância")]
     [SerializeField] private float distance = 4.5f;
     [SerializeField] private float minDistance = 2.2f;
-    [SerializeField] private float maxDistance = 6f;
+    // [SerializeField] private float maxDistance = 6f;
 
     [Header("Rotação")]
     [SerializeField] private float mouseSensitivity = 130f;

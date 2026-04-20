@@ -50,8 +50,8 @@ public class FinanceMovementRowUI : MonoBehaviour
         if (dateText != null)
         {
             string label = data.IsIncome
-                ? $"Entrada: {referenceDate:dd/MM/yyyy}"
-                : $"Venc.: {referenceDate:dd/MM/yyyy}";
+                ? $"{referenceDate:dd/MM}"
+                : $"{referenceDate:dd/MM}";
 
             dateText.text = label;
         }

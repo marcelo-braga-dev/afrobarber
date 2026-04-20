@@ -1,5 +1,7 @@
+using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class FinanceMonthCardUI : MonoBehaviour
 {
@@ -8,34 +10,89 @@ public class FinanceMonthCardUI : MonoBehaviour
     [SerializeField] private Transform rowsContainer;
     [SerializeField] private FinanceMovementRowUI rowPrefab;
 
+    [Header("Paginação de Movimentações")]
+    [SerializeField] private int rowsPerPage = 15;
+
+    private FinanceMonthGroupData currentGroup;
+    private readonly List<FinanceMovementRowUI> spawnedRows = new List<FinanceMovementRowUI>();
+
+    private int currentLoadedIndex;
+    private bool isLoadingRows;
+
     public void Setup(FinanceMonthGroupData group)
     {
-        if (group == null)
+        currentGroup = group;
+        currentLoadedIndex = 0;
+        isLoadingRows = false;
+
+        ClearRows();
+
+        if (currentGroup == null)
             return;
 
         if (titleText != null)
-            titleText.text = group.GetMonthYearText();
+            titleText.text = currentGroup.GetMonthYearText();
+
+        LoadNextRowsPage();
+    }
+
+    public bool TryLoadMoreRows()
+    {
+        if (!HasMoreRowsToLoad())
+            return false;
+
+        LoadNextRowsPage();
+        return true;
+    }
+
+    public bool HasMoreRowsToLoad()
+    {
+        return currentGroup != null &&
+               currentGroup.Movements != null &&
+               currentLoadedIndex < currentGroup.Movements.Count;
+    }
+
+    public void LoadNextRowsPage()
+    {
+        if (isLoadingRows)
+            return;
+
+        if (!HasMoreRowsToLoad())
+            return;
 
         if (rowsContainer == null || rowPrefab == null)
             return;
 
-        ClearRows();
+        isLoadingRows = true;
 
-        for (int i = 0; i < group.Movements.Count; i++)
+        int safeRowsPerPage = Mathf.Max(1, rowsPerPage);
+        int endIndex = Mathf.Min(currentLoadedIndex + safeRowsPerPage, currentGroup.Movements.Count);
+
+        for (int i = currentLoadedIndex; i < endIndex; i++)
         {
             FinanceMovementRowUI row = Instantiate(rowPrefab, rowsContainer);
-            row.Setup(group.Movements[i]);
+            row.Setup(currentGroup.Movements[i]);
+            spawnedRows.Add(row);
         }
+
+        currentLoadedIndex = endIndex;
+        isLoadingRows = false;
+
+        RectTransform rect = rowsContainer as RectTransform;
+        if (rect != null)
+            LayoutRebuilder.ForceRebuildLayoutImmediate(rect);
     }
 
     private void ClearRows()
     {
-        if (rowsContainer == null)
-            return;
-
-        for (int i = rowsContainer.childCount - 1; i >= 0; i--)
+        if (rowsContainer != null)
         {
-            Destroy(rowsContainer.GetChild(i).gameObject);
+            for (int i = rowsContainer.childCount - 1; i >= 0; i--)
+            {
+                Destroy(rowsContainer.GetChild(i).gameObject);
+            }
         }
+
+        spawnedRows.Clear();
     }
 }
