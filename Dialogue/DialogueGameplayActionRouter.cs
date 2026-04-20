@@ -1,72 +1,141 @@
-using System.Collections.Generic;
 using UnityEngine;
 
 public class DialogueGameplayActionRouter : MonoBehaviour
 {
-    [SerializeField] private bool allowNewClients = true;
+    [Header("Referências")]
+    [SerializeField] private BarbershopServiceManager serviceManager;
+
+    private bool isSubscribed;
 
     private void OnEnable()
     {
-        if (GlobalDialogueManager.Instance != null)
-            GlobalDialogueManager.Instance.OnPlayerOptionTriggered += HandleOption;
+        TrySubscribe();
+    }
+
+    private void Start()
+    {
+        TrySubscribe();
+
+        if (serviceManager == null)
+            serviceManager = FindObjectOfType<BarbershopServiceManager>();
     }
 
     private void OnDisable()
     {
-        if (GlobalDialogueManager.Instance != null)
-            GlobalDialogueManager.Instance.OnPlayerOptionTriggered -= HandleOption;
+        Unsubscribe();
     }
 
-    private void HandleOption(DialogueSpeechOption option)
+    private void TrySubscribe()
+    {
+        if (isSubscribed)
+            return;
+
+        if (GlobalDialogueManager.Instance == null)
+        {
+            Debug.LogWarning("[DialogueGameplayActionRouter] GlobalDialogueManager ainda não existe. Tentando novamente...");
+            Invoke(nameof(TrySubscribe), 0.2f);
+            return;
+        }
+
+        GlobalDialogueManager.Instance.OnPlayerOptionTriggered -= HandlePlayerOptionTriggered;
+        GlobalDialogueManager.Instance.OnPlayerOptionTriggered += HandlePlayerOptionTriggered;
+
+        isSubscribed = true;
+
+        Debug.Log("[DialogueGameplayActionRouter] Inscrito no evento OnPlayerOptionTriggered.");
+    }
+
+    private void Unsubscribe()
+    {
+        CancelInvoke(nameof(TrySubscribe));
+
+        if (GlobalDialogueManager.Instance != null)
+            GlobalDialogueManager.Instance.OnPlayerOptionTriggered -= HandlePlayerOptionTriggered;
+
+        isSubscribed = false;
+    }
+
+    private void HandlePlayerOptionTriggered(DialogueSpeechOption option)
     {
         if (option == null)
+        {
+            Debug.LogWarning("[DialogueGameplayActionRouter] Opção recebida está nula.");
             return;
+        }
+
+        Debug.Log($"[DialogueGameplayActionRouter] Recebeu opção: {option.label} | Action: {option.action}");
 
         switch (option.action)
         {
             case DialogueSpeechOptionAction.CallNextClient:
-                CallNextClientFromQueue();
+                CallNextClient();
                 break;
 
             case DialogueSpeechOptionAction.CloseShopForNewClients:
-                allowNewClients = false;
-                GlobalDialogueManager.Instance?.AddSystemMessage("Novos atendimentos foram pausados.", DialogueContextType.Queue);
+                GlobalDialogueManager.Instance.AddSystemMessage(
+                    "Você decidiu não receber mais novos clientes hoje.",
+                    DialogueContextType.Queue
+                );
                 break;
 
             case DialogueSpeechOptionAction.OpenShopForNewClients:
-                allowNewClients = true;
-                GlobalDialogueManager.Instance?.AddSystemMessage("Atendimentos reabertos.", DialogueContextType.Queue);
+                GlobalDialogueManager.Instance.AddSystemMessage(
+                    "Você voltou a receber novos clientes.",
+                    DialogueContextType.Queue
+                );
+                break;
+
+            case DialogueSpeechOptionAction.AskServicePreference:
+                GlobalDialogueManager.Instance.AddSystemMessage(
+                    "Você perguntou ao cliente sobre a preferência do atendimento.",
+                    option.contextType
+                );
+                break;
+
+            case DialogueSpeechOptionAction.StartService:
+                CallNextClient();
+                break;
+
+            case DialogueSpeechOptionAction.SayWillTakeLong:
+                GlobalDialogueManager.Instance.AddSystemMessage(
+                    "Você avisou que o atendimento pode demorar um pouco.",
+                    option.contextType
+                );
+                break;
+
+            case DialogueSpeechOptionAction.None:
+            default:
+                Debug.Log("[DialogueGameplayActionRouter] Nenhuma ação configurada para esta opção.");
                 break;
         }
     }
 
-    private void CallNextClientFromQueue()
+    private void CallNextClient()
     {
-        if (!allowNewClients)
+        if (serviceManager == null)
+            serviceManager = FindObjectOfType<BarbershopServiceManager>();
+
+        if (serviceManager == null)
         {
-            GlobalDialogueManager.Instance?.AddSystemMessage("Você encerrou os novos atendimentos por enquanto.", DialogueContextType.Queue);
+            Debug.LogWarning("[DialogueGameplayActionRouter] BarbershopServiceManager não encontrado.");
             return;
         }
 
-        if (BarberQueueSystem.Instance == null)
+        bool success = serviceManager.CallNextClientFromQueue();
+
+        if (success)
         {
-            GlobalDialogueManager.Instance?.AddSystemMessage("Fila indisponível no momento.", DialogueContextType.Queue);
-            return;
+            GlobalDialogueManager.Instance.AddSystemMessage(
+                "Chamando o próximo cliente da fila.",
+                DialogueContextType.Queue
+            );
         }
-
-        List<ClientQueueData> ordered = BarberQueueSystem.Instance.GetQueueOrderedByArrival();
-        ClientQueueData next = ordered.Find(x => x != null && !x.isBeingServed && x.clientNPC != null);
-
-        if (next == null)
+        else
         {
-            GlobalDialogueManager.Instance?.AddSystemMessage("Não há clientes aguardando.", DialogueContextType.Queue);
-            return;
+            GlobalDialogueManager.Instance.AddSystemMessage(
+                "Não há clientes disponíveis na fila.",
+                DialogueContextType.Queue
+            );
         }
-
-        ClientNPC npc = next.clientNPC;
-        NPCIdentity identity = npc.GetComponent<NPCIdentity>();
-        GlobalDialogueManager.Instance?.AddNpcMessage(identity, "Tô indo pra cadeira agora!", DialogueContextType.Queue);
-
-        npc.CallForService();
     }
 }

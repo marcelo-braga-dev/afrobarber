@@ -2,40 +2,68 @@ using System.Collections.Generic;
 
 public static class DialogueContextOptionsProvider
 {
-    public static List<DialogueSpeechOption> GetOptions(DialogueContextType context)
+    public static List<DialogueSpeechOption> GetOptions(DialogueContextType contextType)
     {
         List<DialogueSpeechOption> options = new List<DialogueSpeechOption>();
 
-        switch (context)
+        switch (contextType)
         {
             case DialogueContextType.Queue:
-                options.Add(Create("queue_next", "Próximo da fila", context, DialogueSpeechOptionAction.CallNextClient));
-                options.Add(Create("queue_close", "Hoje não vou atender mais ninguém", context, DialogueSpeechOptionAction.CloseShopForNewClients));
-                options.Add(Create("queue_wait", "Aguarde um momento", context, DialogueSpeechOptionAction.None));
+                options.Add(new DialogueSpeechOption
+                {
+                    optionId = "queue_call_next_client",
+                    label = "Próximo da fila",
+                    contextType = DialogueContextType.Queue,
+                    action = DialogueSpeechOptionAction.CallNextClient
+                });
+
+                options.Add(new DialogueSpeechOption
+                {
+                    optionId = "queue_close_shop_new_clients",
+                    label = "Hoje não vou atender mais ninguém",
+                    contextType = DialogueContextType.Queue,
+                    action = DialogueSpeechOptionAction.CloseShopForNewClients
+                });
+
+                options.Add(new DialogueSpeechOption
+                {
+                    optionId = "queue_open_shop_new_clients",
+                    label = "Voltar a atender clientes",
+                    contextType = DialogueContextType.Queue,
+                    action = DialogueSpeechOptionAction.OpenShopForNewClients
+                });
                 break;
 
             case DialogueContextType.Service:
-                options.Add(Create("service_pref", "Como você quer o corte?", context, DialogueSpeechOptionAction.AskServicePreference));
-                options.Add(Create("service_start", "Já estou começando", context, DialogueSpeechOptionAction.StartService));
-                options.Add(Create("service_long", "Vai demorar um pouco", context, DialogueSpeechOptionAction.SayWillTakeLong));
+                options.Add(new DialogueSpeechOption
+                {
+                    optionId = "service_ask_preference",
+                    label = "Qual estilo você prefere?",
+                    contextType = DialogueContextType.Service,
+                    action = DialogueSpeechOptionAction.AskServicePreference
+                });
+
+                options.Add(new DialogueSpeechOption
+                {
+                    optionId = "service_start",
+                    label = "Começar atendimento",
+                    contextType = DialogueContextType.Service,
+                    action = DialogueSpeechOptionAction.StartService
+                });
                 break;
 
+            case DialogueContextType.None:
             default:
-                options.Add(Create("generic_hi", "Tudo bem por aí?", context, DialogueSpeechOptionAction.None));
+                options.Add(new DialogueSpeechOption
+                {
+                    optionId = "none_no_action",
+                    label = "Nenhuma conversa disponível agora",
+                    contextType = DialogueContextType.None,
+                    action = DialogueSpeechOptionAction.None
+                });
                 break;
         }
 
         return options;
-    }
-
-    private static DialogueSpeechOption Create(string id, string label, DialogueContextType context, DialogueSpeechOptionAction action)
-    {
-        return new DialogueSpeechOption
-        {
-            optionId = id,
-            label = label,
-            contextType = context,
-            action = action
-        };
     }
 }

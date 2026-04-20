@@ -19,7 +19,6 @@ public class ClientPatience : MonoBehaviour
     [SerializeField] private float currentWaitingMinutes;
     [SerializeField] private float patiencePercent;
     [SerializeField] private PatienceState currentState;
-    [SerializeField] private PatienceState lastAnnouncedState;
 
     public float MaxPatienceMinutes => maxPatienceMinutes;
     public float CurrentWaitingMinutes => currentWaitingMinutes;
@@ -44,12 +43,6 @@ public class ClientPatience : MonoBehaviour
         currentWaitingMinutes = data.GetWaitingMinutes(currentGameMinutes);
         patiencePercent = data.GetPatiencePercent(currentGameMinutes);
         currentState = EvaluateState(patiencePercent);
-
-        if (currentState != lastAnnouncedState)
-        {
-            AnnounceState(currentState);
-            lastAnnouncedState = currentState;
-        }
     }
 
     public void SetupPatience(float patienceMinutes)
@@ -72,41 +65,5 @@ public class ClientPatience : MonoBehaviour
             return PatienceState.Angry;
 
         return PatienceState.LeavingSoon;
-    }
-
-    private void AnnounceState(PatienceState state)
-    {
-        if (clientNPC == null)
-            return;
-
-        NPCIdentity identity = clientNPC.GetComponent<NPCIdentity>();
-        NPCInteractionIndicator indicator = clientNPC.GetComponentInChildren<NPCInteractionIndicator>(true);
-
-        string line = null;
-        InteractionAvailabilityType indicatorState = InteractionAvailabilityType.Conversation;
-
-        switch (state)
-        {
-            case PatienceState.Impatient:
-                line = "Ainda vai demorar muito?";
-                indicatorState = InteractionAvailabilityType.NeedResponse;
-                break;
-
-            case PatienceState.Angry:
-                line = "Já estou esperando faz tempo...";
-                indicatorState = InteractionAvailabilityType.Urgent;
-                break;
-
-            case PatienceState.LeavingSoon:
-                line = "Você vai conseguir me atender hoje?";
-                indicatorState = InteractionAvailabilityType.Urgent;
-                break;
-        }
-
-        if (!string.IsNullOrWhiteSpace(line))
-        {
-            GlobalDialogueManager.Instance?.AddNpcMessage(identity, line, DialogueContextType.Queue);
-            indicator?.SetState(indicatorState);
-        }
     }
 }
