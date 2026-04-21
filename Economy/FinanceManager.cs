@@ -9,32 +9,43 @@ public class FinanceManager : MonoBehaviour
 
     [Header("Persistência")]
     [SerializeField] private bool usePlayerPrefs = true;
-    [SerializeField] private string saveKey = "AFROBARBER_FINANCE_HISTORY";
+    [SerializeField] private string historySaveKey = "AFROBARBER_FINANCE_HISTORY";
+    [SerializeField] private string currentCashSaveKey = "AFROBARBER_FINANCE_CURRENT_CASH";
+    [SerializeField] private int defaultStartingCash = 1000;
 
     [Header("Migração")]
-    [SerializeField] private bool migrateOldCashRegisterKey = true;
-    [SerializeField] private string oldCashRegisterKey = "AFROBARBER_CASH_REGISTER_MONEY";
+    [SerializeField] private bool migrateLegacyMoney = true;
+    [SerializeField] private string legacyPlayerMoneyKey = "AFROBARBER_PLAYER_MONEY";
+    [SerializeField] private string legacyCashRegisterKey = "AFROBARBER_CASH_REGISTER_MONEY";
+    [SerializeField] private string legacyMigrationDoneKey = "AFROBARBER_FINANCE_MIGRATION_V2_DONE";
+
+    [Header("Debug")]
+    [SerializeField] private bool logMessagesInConsole = true;
 
     private readonly List<FinanceMovementData> movements = new List<FinanceMovementData>();
+    private int currentCash;
 
     public IReadOnlyList<FinanceMovementData> Movements => movements;
+    public int CurrentCash => currentCash;
 
     public event Action OnFinanceDataChanged;
+    public event Action<int> OnCashChanged;
 
     private void Awake()
     {
         if (Instance != null && Instance != this)
         {
-            Debug.LogWarning("[FinanceManager] Instância duplicada encontrada. Destruindo apenas este componente.");
-            Destroy(this);
+            Debug.LogWarning("[FinanceManager] Instância duplicada encontrada. O objeto duplicado será destruído.");
+            Destroy(gameObject);
             return;
         }
 
         Instance = this;
         DontDestroyOnLoad(gameObject);
 
+        TryMigrateLegacyCash();
+        LoadCash();
         LoadData();
-        TryMigrateOldCashRegisterMoney();
     }
 
     private void Start()
@@ -58,6 +69,63 @@ public class FinanceManager : MonoBehaviour
         return dateTime.ToString("dd/MM/yyyy HH:mm");
     }
 
+    public bool HasEnoughMoney(int amount)
+    {
+        if (amount <= 0)
+            return true;
+
+        return currentCash >= amount;
+    }
+
+    public void AddMoney(int amount, string reason = "")
+    {
+        if (amount <= 0)
+            return;
+
+        AddMoneyInternal(amount);
+        NotifyChanged();
+
+        if (logMessagesInConsole)
+            Debug.Log($"[FinanceManager] Dinheiro adicionado: +R$ {amount}. Saldo atual: R$ {currentCash}. {reason}");
+    }
+
+    public bool SpendMoney(int amount, string reason = "")
+    {
+        if (amount <= 0)
+            return true;
+
+        bool spent = SpendMoneyInternal(amount);
+        if (!spent)
+            return false;
+
+        NotifyChanged();
+
+        if (logMessagesInConsole)
+            Debug.Log($"[FinanceManager] Dinheiro gasto: -R$ {amount}. Saldo atual: R$ {currentCash}. {reason}");
+
+        return true;
+    }
+
+    public void SetCurrentCash(int amount)
+    {
+        currentCash = Mathf.Max(0, amount);
+        SaveCash();
+        NotifyChanged();
+
+        if (logMessagesInConsole)
+            Debug.Log($"[FinanceManager] Saldo ajustado manualmente para R$ {currentCash}.");
+    }
+
+    public void ResetCash(int amount = 0)
+    {
+        currentCash = Mathf.Max(0, amount);
+        SaveCash();
+        NotifyChanged();
+
+        if (logMessagesInConsole)
+            Debug.Log($"[FinanceManager] Saldo resetado para R$ {currentCash}.");
+    }
+
     public FinanceMovementData RegisterServiceIncome(ClientRequestData requestData, string clientName = "")
     {
         if (requestData == null)
@@ -67,7 +135,6 @@ public class FinanceManager : MonoBehaviour
         }
 
         int amount = Mathf.Max(0, requestData.ServicePrice);
-
         if (amount <= 0)
             return null;
 
@@ -91,11 +158,11 @@ public class FinanceManager : MonoBehaviour
         SortMovements();
         SaveData();
 
-        AddMoneyToPlayer(amount);
-
+        AddMoneyInternal(amount);
         NotifyChanged();
 
-        Debug.Log($"[FinanceManager] Receita de atendimento registrada: +R$ {amount} | Caixa atual: R$ {GetCurrentCash()}");
+        if (logMessagesInConsole)
+            Debug.Log($"[FinanceManager] Receita de atendimento registrada: +R$ {amount} | Caixa atual: R$ {currentCash}");
 
         return movement;
     }
@@ -107,7 +174,6 @@ public class FinanceManager : MonoBehaviour
         FinanceMovementOrigin origin = FinanceMovementOrigin.Service)
     {
         amount = Mathf.Max(0, amount);
-
         if (amount <= 0)
             return null;
 
@@ -132,11 +198,11 @@ public class FinanceManager : MonoBehaviour
         SortMovements();
         SaveData();
 
-        AddMoneyToPlayer(amount);
-
+        AddMoneyInternal(amount);
         NotifyChanged();
 
-        Debug.Log($"[FinanceManager] Entrada registrada: +R$ {amount} | Caixa atual: R$ {GetCurrentCash()}");
+        if (logMessagesInConsole)
+            Debug.Log($"[FinanceManager] Entrada registrada: +R$ {amount} | Caixa atual: R$ {currentCash}");
 
         return movement;
     }
@@ -161,7 +227,9 @@ public class FinanceManager : MonoBehaviour
             0,
             0,
             0,
-            0
+            0,
+            null,
+            true
         );
     }
 
@@ -180,7 +248,6 @@ public class FinanceManager : MonoBehaviour
             return null;
 
         int amount = definition.CalculateAmount(referenceYear, referenceMonth, workedMinutesUsedInCalculation);
-
         int dueDay = Mathf.Clamp(definition.dueDay, 1, DateTime.DaysInMonth(referenceYear, referenceMonth));
 
         DateTime dueDate = new DateTime(referenceYear, referenceMonth, dueDay, 8, 0, 0);
@@ -204,7 +271,8 @@ public class FinanceManager : MonoBehaviour
             usageBaseDate.Year,
             usageBaseDate.Month,
             workedMinutesUsedInCalculation,
-            createdAt
+            createdAt,
+            true
         );
     }
 
@@ -216,7 +284,6 @@ public class FinanceManager : MonoBehaviour
         bool spendMoneyNow = true)
     {
         amount = Mathf.Max(0, amount);
-
         if (amount <= 0)
             return null;
 
@@ -225,8 +292,7 @@ public class FinanceManager : MonoBehaviour
 
         if (spendMoneyNow)
         {
-            bool spent = SpendPlayerMoney(amount);
-
+            bool spent = SpendMoneyInternal(amount);
             if (!spent)
             {
                 Debug.LogWarning("[FinanceManager] Dinheiro insuficiente para registrar compra da loja.");
@@ -250,12 +316,14 @@ public class FinanceManager : MonoBehaviour
             0,
             0,
             0,
-            now
+            now,
+            false
         );
 
         NotifyChanged();
 
-        Debug.Log($"[FinanceManager] Compra registrada: -R$ {amount} | Caixa atual: R$ {GetCurrentCash()}");
+        if (logMessagesInConsole)
+            Debug.Log($"[FinanceManager] Compra registrada: -R$ {amount} | Caixa atual: R$ {currentCash}");
 
         return movement;
     }
@@ -278,7 +346,6 @@ public class FinanceManager : MonoBehaviour
             return false;
 
         FinanceMovementData movement = movements.FirstOrDefault(x => x.id == movementId);
-
         if (movement == null)
             return false;
 
@@ -290,8 +357,7 @@ public class FinanceManager : MonoBehaviour
         if (!movement.IsPayable(now))
             return false;
 
-        bool paid = SpendPlayerMoney(movement.amount);
-
+        bool paid = SpendMoneyInternal(movement.amount);
         if (!paid)
             return false;
 
@@ -299,17 +365,15 @@ public class FinanceManager : MonoBehaviour
         SaveData();
         NotifyChanged();
 
-        Debug.Log($"[FinanceManager] Despesa paga: -R$ {movement.amount} | Caixa atual: R$ {GetCurrentCash()}");
+        if (logMessagesInConsole)
+            Debug.Log($"[FinanceManager] Despesa paga: -R$ {movement.amount} | Caixa atual: R$ {currentCash}");
 
         return true;
     }
 
     public int GetCurrentCash()
     {
-        if (PlayerMoney.Instance == null)
-            return 0;
-
-        return PlayerMoney.Instance.CurrentMoney;
+        return currentCash;
     }
 
     public int GetOpenDebtTotal()
@@ -361,6 +425,33 @@ public class FinanceManager : MonoBehaviour
             .ToList();
     }
 
+    public void ClearHistory()
+    {
+        movements.Clear();
+        SaveData();
+        NotifyChanged();
+
+        if (logMessagesInConsole)
+            Debug.Log("[FinanceManager] Histórico financeiro apagado.");
+    }
+
+    public void ClearAllData(bool resetCashToZero = false)
+    {
+        movements.Clear();
+        SaveData();
+
+        if (resetCashToZero)
+        {
+            currentCash = 0;
+            SaveCash();
+        }
+
+        NotifyChanged();
+
+        if (logMessagesInConsole)
+            Debug.Log("[FinanceManager] Todos os dados financeiros foram apagados.");
+    }
+
     private FinanceMovementData AddExpenseInternal(
         string title,
         string description,
@@ -375,7 +466,8 @@ public class FinanceManager : MonoBehaviour
         int usageSourceYear,
         int usageSourceMonth,
         int usageWorkedMinutes,
-        DateTime? createdAtOverride = null)
+        DateTime? createdAtOverride,
+        bool notify)
     {
         amount = Mathf.Max(0, amount);
 
@@ -410,72 +502,79 @@ public class FinanceManager : MonoBehaviour
         movements.Add(movement);
         SortMovements();
         SaveData();
-        NotifyChanged();
+
+        if (notify)
+            NotifyChanged();
 
         return movement;
     }
 
-    private void AddMoneyToPlayer(int amount)
+    private void AddMoneyInternal(int amount)
     {
         if (amount <= 0)
             return;
 
-        if (PlayerMoney.Instance == null)
-        {
-            Debug.LogWarning("[FinanceManager] PlayerMoney.Instance não encontrado. Não foi possível adicionar dinheiro.");
-            return;
-        }
-
-        PlayerMoney.Instance.AddMoney(amount);
+        currentCash += amount;
+        SaveCash();
     }
 
-    private bool SpendPlayerMoney(int amount)
+    private bool SpendMoneyInternal(int amount)
     {
         if (amount <= 0)
             return true;
 
-        if (PlayerMoney.Instance == null)
-        {
-            Debug.LogWarning("[FinanceManager] PlayerMoney.Instance não encontrado. Não foi possível gastar dinheiro.");
+        if (currentCash < amount)
             return false;
-        }
 
-        return PlayerMoney.Instance.SpendMoney(amount);
+        currentCash -= amount;
+        SaveCash();
+        return true;
     }
 
-    private void TryMigrateOldCashRegisterMoney()
+    private void TryMigrateLegacyCash()
     {
-        if (!migrateOldCashRegisterKey)
+        if (!migrateLegacyMoney || !usePlayerPrefs)
             return;
 
-        if (!usePlayerPrefs)
+        if (PlayerPrefs.GetInt(legacyMigrationDoneKey, 0) == 1)
             return;
 
-        if (PlayerMoney.Instance == null)
-            return;
+        bool hasNewCash = PlayerPrefs.HasKey(currentCashSaveKey);
 
-        if (!PlayerPrefs.HasKey(oldCashRegisterKey))
-            return;
+        int migratedValue = 0;
+        bool foundLegacy = false;
 
-        int oldCash = PlayerPrefs.GetInt(oldCashRegisterKey, 0);
-
-        if (oldCash <= 0)
+        if (PlayerPrefs.HasKey(legacyPlayerMoneyKey))
         {
-            PlayerPrefs.DeleteKey(oldCashRegisterKey);
-            PlayerPrefs.Save();
-            return;
+            migratedValue = Mathf.Max(migratedValue, PlayerPrefs.GetInt(legacyPlayerMoneyKey, 0));
+            foundLegacy = true;
         }
 
-        if (PlayerMoney.Instance.CurrentMoney <= 0)
+        if (PlayerPrefs.HasKey(legacyCashRegisterKey))
         {
-            PlayerMoney.Instance.AddMoney(oldCash);
-            Debug.Log($"[FinanceManager] Caixa antigo migrado para PlayerMoney: R$ {oldCash}");
+            migratedValue = Mathf.Max(migratedValue, PlayerPrefs.GetInt(legacyCashRegisterKey, 0));
+            foundLegacy = true;
         }
 
-        PlayerPrefs.DeleteKey(oldCashRegisterKey);
+        if (!hasNewCash)
+        {
+            if (foundLegacy)
+            {
+                PlayerPrefs.SetInt(currentCashSaveKey, Mathf.Max(0, migratedValue));
+
+                if (logMessagesInConsole)
+                    Debug.Log($"[FinanceManager] Saldo legado migrado para a nova chave: R$ {migratedValue}");
+            }
+            else
+            {
+                PlayerPrefs.SetInt(currentCashSaveKey, Mathf.Max(0, defaultStartingCash));
+            }
+        }
+
+        PlayerPrefs.DeleteKey(legacyPlayerMoneyKey);
+        PlayerPrefs.DeleteKey(legacyCashRegisterKey);
+        PlayerPrefs.SetInt(legacyMigrationDoneKey, 1);
         PlayerPrefs.Save();
-
-        NotifyChanged();
     }
 
     private DateTime GetReferenceDate(FinanceMovementData movement)
@@ -499,6 +598,33 @@ public class FinanceManager : MonoBehaviour
         movements.Sort((a, b) => GetOrderDate(b).CompareTo(GetOrderDate(a)));
     }
 
+    private void SaveCash()
+    {
+        if (!usePlayerPrefs)
+            return;
+
+        PlayerPrefs.SetInt(currentCashSaveKey, currentCash);
+        PlayerPrefs.Save();
+    }
+
+    private void LoadCash()
+    {
+        if (!usePlayerPrefs)
+        {
+            currentCash = Mathf.Max(0, defaultStartingCash);
+            return;
+        }
+
+        if (PlayerPrefs.HasKey(currentCashSaveKey))
+        {
+            currentCash = Mathf.Max(0, PlayerPrefs.GetInt(currentCashSaveKey, defaultStartingCash));
+            return;
+        }
+
+        currentCash = Mathf.Max(0, defaultStartingCash);
+        SaveCash();
+    }
+
     private void SaveData()
     {
         if (!usePlayerPrefs)
@@ -510,7 +636,7 @@ public class FinanceManager : MonoBehaviour
         };
 
         string json = JsonUtility.ToJson(wrapper);
-        PlayerPrefs.SetString(saveKey, json);
+        PlayerPrefs.SetString(historySaveKey, json);
         PlayerPrefs.Save();
     }
 
@@ -521,16 +647,14 @@ public class FinanceManager : MonoBehaviour
         if (!usePlayerPrefs)
             return;
 
-        if (!PlayerPrefs.HasKey(saveKey))
+        if (!PlayerPrefs.HasKey(historySaveKey))
             return;
 
-        string json = PlayerPrefs.GetString(saveKey, string.Empty);
-
+        string json = PlayerPrefs.GetString(historySaveKey, string.Empty);
         if (string.IsNullOrWhiteSpace(json))
             return;
 
         FinanceMovementSaveWrapper wrapper = JsonUtility.FromJson<FinanceMovementSaveWrapper>(json);
-
         if (wrapper == null || wrapper.items == null)
             return;
 
@@ -538,21 +662,9 @@ public class FinanceManager : MonoBehaviour
         SortMovements();
     }
 
-    public void ClearAllData()
-    {
-        movements.Clear();
-
-        if (usePlayerPrefs)
-        {
-            PlayerPrefs.DeleteKey(saveKey);
-            PlayerPrefs.Save();
-        }
-
-        NotifyChanged();
-    }
-
     private void NotifyChanged()
     {
+        OnCashChanged?.Invoke(currentCash);
         OnFinanceDataChanged?.Invoke();
     }
 }

@@ -6,11 +6,6 @@ public class PlayerMoney : MonoBehaviour
 {
     public static PlayerMoney Instance { get; private set; }
 
-    [Header("Configuração")]
-    [SerializeField] private int initialMoney = 0;
-    [SerializeField] private bool usePlayerPrefs = true;
-    [SerializeField] private string saveKey = "AFROBARBER_PLAYER_MONEY";
-
     [Header("UI")]
     [SerializeField] private TMP_Text caixaAtualText;
     [SerializeField] private TMP_Text dividaAtualText;
@@ -21,9 +16,23 @@ public class PlayerMoney : MonoBehaviour
     [SerializeField] private Color positiveColor = new Color(0.2f, 0.9f, 0.2f);
     [SerializeField] private Color negativeColor = new Color(0.9f, 0.2f, 0.2f);
 
-    private int currentMoney;
+    [Header("Debug")]
+    [SerializeField] private bool logWarnings = true;
 
-    public int CurrentMoney => currentMoney;
+    public int CurrentMoney
+    {
+        get
+        {
+            if (FinanceManager.Instance == null)
+            {
+                if (logWarnings)
+                    Debug.LogWarning("[PlayerMoney] FinanceManager.Instance não encontrado.");
+                return 0;
+            }
+
+            return FinanceManager.Instance.CurrentCash;
+        }
+    }
 
     public event Action<int> OnMoneyChanged;
 
@@ -33,61 +42,44 @@ public class PlayerMoney : MonoBehaviour
         {
             Instance = this;
             DontDestroyOnLoad(gameObject);
-            LoadMoney();
         }
-        else
+        else if (Instance != this)
         {
             Destroy(gameObject);
         }
     }
 
-    private void Start()
+    private void OnEnable()
     {
+        SubscribeToFinance();
         UpdateMoneyUI();
         NotifyMoneyChanged();
+    }
 
-        if (FinanceManager.Instance != null)
-        {
-            FinanceManager.Instance.OnFinanceDataChanged += UpdateMoneyUI;
-        }
+    private void Start()
+    {
+        SubscribeToFinance();
+        UpdateMoneyUI();
+        NotifyMoneyChanged();
+    }
+
+    private void OnDisable()
+    {
+        UnsubscribeFromFinance();
     }
 
     private void OnDestroy()
     {
-        if (FinanceManager.Instance != null)
-        {
-            FinanceManager.Instance.OnFinanceDataChanged -= UpdateMoneyUI;
-        }
+        if (Instance == this)
+            Instance = null;
+
+        UnsubscribeFromFinance();
     }
-
-    // =========================
-    // SALVAMENTO
-    // =========================
-
-    private void LoadMoney()
-    {
-        if (usePlayerPrefs)
-            currentMoney = PlayerPrefs.GetInt(saveKey, initialMoney);
-        else
-            currentMoney = initialMoney;
-    }
-
-    private void SaveMoney()
-    {
-        if (!usePlayerPrefs)
-            return;
-
-        PlayerPrefs.SetInt(saveKey, currentMoney);
-        PlayerPrefs.Save();
-    }
-
-    // =========================
-    // UI
-    // =========================
 
     public void UpdateMoneyUI()
     {
-        // SALDO
+        int currentMoney = CurrentMoney;
+
         if (caixaAtualText != null)
         {
             caixaAtualText.text = $"{moneyPrefix}{currentMoney}";
@@ -96,7 +88,6 @@ public class PlayerMoney : MonoBehaviour
                 caixaAtualText.color = currentMoney >= 0 ? positiveColor : negativeColor;
         }
 
-        // DÍVIDA
         if (dividaAtualText != null && FinanceManager.Instance != null)
         {
             int divida = FinanceManager.Instance.GetOverdueDebtTotal();
@@ -108,53 +99,71 @@ public class PlayerMoney : MonoBehaviour
         }
     }
 
-    // =========================
-    // OPERAÇÕES DE DINHEIRO
-    // =========================
-
     public void AddMoney(int amount)
     {
-        if (amount <= 0)
+        if (FinanceManager.Instance == null)
+        {
+            if (logWarnings)
+                Debug.LogWarning("[PlayerMoney] FinanceManager.Instance não encontrado.");
             return;
+        }
 
-        currentMoney += amount;
-
-        SaveMoney();
-        UpdateMoneyUI();
-        NotifyMoneyChanged();
-
-        Debug.Log($"[PlayerMoney] Dinheiro adicionado: {amount}. Saldo atual: {currentMoney}");
+        FinanceManager.Instance.AddMoney(amount, "Entrada via PlayerMoney");
     }
 
     public bool HasEnoughMoney(int amount)
     {
-        return currentMoney >= amount;
+        if (FinanceManager.Instance == null)
+        {
+            if (logWarnings)
+                Debug.LogWarning("[PlayerMoney] FinanceManager.Instance não encontrado.");
+            return false;
+        }
+
+        return FinanceManager.Instance.HasEnoughMoney(amount);
     }
 
     public bool SpendMoney(int amount)
     {
-        if (amount <= 0)
+        if (FinanceManager.Instance == null)
+        {
+            if (logWarnings)
+                Debug.LogWarning("[PlayerMoney] FinanceManager.Instance não encontrado.");
             return false;
+        }
 
-        if (currentMoney < amount)
-            return false;
-
-        currentMoney -= amount;
-
-        SaveMoney();
-        UpdateMoneyUI();
-        NotifyMoneyChanged();
-
-        Debug.Log($"[PlayerMoney] Dinheiro gasto: {amount}. Saldo atual: {currentMoney}");
-        return true;
+        return FinanceManager.Instance.SpendMoney(amount, "Saída via PlayerMoney");
     }
 
-    // =========================
-    // EVENTOS
-    // =========================
+    private void SubscribeToFinance()
+    {
+        if (FinanceManager.Instance == null)
+            return;
+
+        FinanceManager.Instance.OnCashChanged -= HandleCashChanged;
+        FinanceManager.Instance.OnCashChanged += HandleCashChanged;
+
+        FinanceManager.Instance.OnFinanceDataChanged -= UpdateMoneyUI;
+        FinanceManager.Instance.OnFinanceDataChanged += UpdateMoneyUI;
+    }
+
+    private void UnsubscribeFromFinance()
+    {
+        if (FinanceManager.Instance == null)
+            return;
+
+        FinanceManager.Instance.OnCashChanged -= HandleCashChanged;
+        FinanceManager.Instance.OnFinanceDataChanged -= UpdateMoneyUI;
+    }
+
+    private void HandleCashChanged(int currentValue)
+    {
+        UpdateMoneyUI();
+        NotifyMoneyChanged();
+    }
 
     private void NotifyMoneyChanged()
     {
-        OnMoneyChanged?.Invoke(currentMoney);
+        OnMoneyChanged?.Invoke(CurrentMoney);
     }
 }

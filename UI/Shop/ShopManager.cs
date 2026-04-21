@@ -50,7 +50,9 @@ public class ShopManager : MonoBehaviour
 
         foreach (CategoryButtonUI button in categoryButtons)
         {
-            if (button == null) continue;
+            if (button == null)
+                continue;
+
             button.Setup(this);
         }
     }
@@ -66,7 +68,9 @@ public class ShopManager : MonoBehaviour
     {
         foreach (CategoryButtonUI button in categoryButtons)
         {
-            if (button == null) continue;
+            if (button == null)
+                continue;
+
             button.SetSelected(button.Category == currentCategory);
         }
     }
@@ -91,8 +95,11 @@ public class ShopManager : MonoBehaviour
 
         foreach (ProductData product in database.products)
         {
-            if (product == null) continue;
-            if (!product.availableAtStart) continue;
+            if (product == null)
+                continue;
+
+            if (!product.availableAtStart)
+                continue;
 
             ShopItemUI itemUI = Instantiate(shopItemPrefab, contentParent);
             itemUI.Setup(product, this);
@@ -104,7 +111,9 @@ public class ShopManager : MonoBehaviour
     {
         foreach (CategoryDatabaseEntry entry in categoryDatabases)
         {
-            if (entry == null) continue;
+            if (entry == null)
+                continue;
+
             if (entry.category == category)
                 return entry.database;
         }
@@ -114,7 +123,8 @@ public class ShopManager : MonoBehaviour
 
     private void ClearShop()
     {
-        if (contentParent == null) return;
+        if (contentParent == null)
+            return;
 
         foreach (Transform child in contentParent)
         {
@@ -144,9 +154,9 @@ public class ShopManager : MonoBehaviour
             return;
         }
 
-        if (PlayerMoney.Instance == null)
+        if (FinanceManager.Instance == null)
         {
-            Debug.LogError("TryBuyProduct: PlayerMoney.Instance está NULL.");
+            Debug.LogError("TryBuyProduct: FinanceManager.Instance está NULL.");
             return;
         }
 
@@ -156,15 +166,21 @@ public class ShopManager : MonoBehaviour
             return;
         }
 
-        if (!PlayerMoney.Instance.HasEnoughMoney(product.preco))
+        if (!FinanceManager.Instance.HasEnoughMoney(product.preco))
         {
             Debug.Log("Dinheiro insuficiente.");
             return;
         }
 
-        bool spent = PlayerMoney.Instance.SpendMoney(product.preco);
+        FinanceMovementData movement = FinanceManager.Instance.RegisterShopPurchaseExpense(
+            $"Compra de {product.productName}",
+            $"Produto comprado na loja. ID: {product.productId}",
+            product.preco,
+            FinanceMovementOrigin.ProductPurchase,
+            true
+        );
 
-        if (!spent)
+        if (movement == null)
         {
             Debug.Log("Não foi possível concluir a compra.");
             return;
@@ -175,6 +191,7 @@ public class ShopManager : MonoBehaviour
 
         Debug.Log($"Produto comprado: {product.productName}");
     }
+
     public void RefreshShopUI()
     {
         GenerateShopByCategory(currentCategory);

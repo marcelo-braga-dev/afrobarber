@@ -2,26 +2,57 @@ using UnityEngine;
 
 public class PlayerWallet : MonoBehaviour
 {
-    [SerializeField] private int currentMoney = 1000;
+    [Header("Compatibilidade")]
+    [SerializeField] private bool logWarnings = true;
 
-    public int CurrentMoney => currentMoney;
+    public int CurrentMoney
+    {
+        get
+        {
+            if (FinanceManager.Instance == null)
+            {
+                if (logWarnings)
+                    Debug.LogWarning("[PlayerWallet] FinanceManager.Instance não encontrado.");
+                return 0;
+            }
+
+            return FinanceManager.Instance.CurrentCash;
+        }
+    }
 
     public bool HasEnough(int amount)
     {
-        return currentMoney >= amount;
+        if (FinanceManager.Instance == null)
+        {
+            if (logWarnings)
+                Debug.LogWarning("[PlayerWallet] FinanceManager.Instance não encontrado.");
+            return false;
+        }
+
+        return FinanceManager.Instance.HasEnoughMoney(amount);
     }
 
     public bool Spend(int amount)
     {
-        if (currentMoney < amount)
+        if (FinanceManager.Instance == null)
+        {
+            if (logWarnings)
+                Debug.LogWarning("[PlayerWallet] FinanceManager.Instance não encontrado.");
             return false;
+        }
 
-        currentMoney -= amount;
-        return true;
+        return FinanceManager.Instance.SpendMoney(amount, "Gasto via PlayerWallet");
     }
 
     public void AddMoney(int amount)
     {
-        currentMoney += amount;
+        if (FinanceManager.Instance == null)
+        {
+            if (logWarnings)
+                Debug.LogWarning("[PlayerWallet] FinanceManager.Instance não encontrado.");
+            return;
+        }
+
+        FinanceManager.Instance.AddMoney(amount, "Entrada via PlayerWallet");
     }
 }

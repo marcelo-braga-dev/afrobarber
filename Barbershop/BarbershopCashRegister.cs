@@ -5,15 +5,22 @@ public class BarbershopCashRegister : MonoBehaviour
 {
     public static BarbershopCashRegister Instance { get; private set; }
 
-    [Header("Caixa")]
-    [SerializeField] private int currentMoney;
-
-    public int CurrentMoney => currentMoney;
-
+    [Header("Eventos")]
     public UnityEvent<int> OnMoneyChanged;
 
-    //private const string SaveKey = "AFROBARBER_CASH_REGISTER_MONEY";
-    private const string SaveKey = "AFROBARBER_PLAYER_MONEY";
+    [Header("Debug")]
+    [SerializeField] private bool logMessagesInConsole = true;
+
+    public int CurrentMoney
+    {
+        get
+        {
+            if (FinanceManager.Instance == null)
+                return 0;
+
+            return FinanceManager.Instance.CurrentCash;
+        }
+    }
 
     private void Awake()
     {
@@ -24,54 +31,84 @@ public class BarbershopCashRegister : MonoBehaviour
         }
 
         Instance = this;
-        Load();
+    }
+
+    private void OnEnable()
+    {
+        SubscribeToFinance();
+        EmitCurrentMoney();
+    }
+
+    private void Start()
+    {
+        EmitCurrentMoney();
+    }
+
+    private void OnDisable()
+    {
+        UnsubscribeFromFinance();
     }
 
     public void AddMoney(int amount)
     {
-        if (amount <= 0)
+        if (FinanceManager.Instance == null)
+        {
+            Debug.LogWarning("[BarbershopCashRegister] FinanceManager.Instance não encontrado.");
             return;
+        }
 
-        currentMoney += amount;
-        Save();
-
-        OnMoneyChanged?.Invoke(currentMoney);
-
-        Debug.Log($"[BarbershopCashRegister] Dinheiro adicionado: R$ {amount}. Caixa atual: R$ {currentMoney}");
+        FinanceManager.Instance.AddMoney(amount, "Entrada via caixa da barbearia");
     }
 
     public bool TrySpendMoney(int amount)
     {
-        if (amount <= 0)
-            return true;
-
-        if (currentMoney < amount)
+        if (FinanceManager.Instance == null)
+        {
+            Debug.LogWarning("[BarbershopCashRegister] FinanceManager.Instance não encontrado.");
             return false;
+        }
 
-        currentMoney -= amount;
-        Save();
-
-        OnMoneyChanged?.Invoke(currentMoney);
-
-        return true;
+        return FinanceManager.Instance.SpendMoney(amount, "Saída via caixa da barbearia");
     }
 
     public void SetMoney(int amount)
     {
-        currentMoney = Mathf.Max(0, amount);
-        Save();
+        if (FinanceManager.Instance == null)
+        {
+            Debug.LogWarning("[BarbershopCashRegister] FinanceManager.Instance não encontrado.");
+            return;
+        }
 
-        OnMoneyChanged?.Invoke(currentMoney);
+        FinanceManager.Instance.SetCurrentCash(amount);
     }
 
-    private void Save()
+    private void SubscribeToFinance()
     {
-        PlayerPrefs.SetInt(SaveKey, currentMoney);
-        PlayerPrefs.Save();
+        if (FinanceManager.Instance != null)
+        {
+            FinanceManager.Instance.OnCashChanged -= HandleCashChanged;
+            FinanceManager.Instance.OnCashChanged += HandleCashChanged;
+        }
     }
 
-    private void Load()
+    private void UnsubscribeFromFinance()
     {
-        currentMoney = PlayerPrefs.GetInt(SaveKey, 0);
+        if (FinanceManager.Instance != null)
+        {
+            FinanceManager.Instance.OnCashChanged -= HandleCashChanged;
+        }
+    }
+
+    private void HandleCashChanged(int amount)
+    {
+        OnMoneyChanged?.Invoke(amount);
+
+        if (logMessagesInConsole)
+            Debug.Log($"[BarbershopCashRegister] Valor atualizado: R$ {amount}");
+    }
+
+    private void EmitCurrentMoney()
+    {
+        HandleCashChanged(CurrentMoney);
     }
 }
