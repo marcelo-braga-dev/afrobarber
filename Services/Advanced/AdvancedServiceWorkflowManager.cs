@@ -10,6 +10,7 @@ public class AdvancedServiceWorkflowManager : MonoBehaviour
     private readonly Dictionary<ClientNPC, ServicePlanData> plansByClient = new Dictionary<ClientNPC, ServicePlanData>();
 
     public bool EnableAdvancedWorkflow => enableAdvancedWorkflow;
+    public ServicePlanningSystem PlanningSystem => planningSystem;
 
     private void Awake()
     {
@@ -36,7 +37,6 @@ public class AdvancedServiceWorkflowManager : MonoBehaviour
 
         ServicePlanData plan = planningSystem.CreatePlan(client.RequestData.RequestId);
 
-        // Plano base inicial (pode ser substituído pela UI de planejamento).
         AddIfCompatible(plan, ServiceActionType.Wash);
         AddIfCompatible(plan, ServiceActionType.Cut);
         AddIfCompatible(plan, ServiceActionType.Finish);
@@ -48,6 +48,45 @@ public class AdvancedServiceWorkflowManager : MonoBehaviour
         GlobalDialogueManager.Instance?.AddNpcMessage(identity, "Beleza, pode montar meu atendimento.", DialogueContextType.Service);
 
         return true;
+    }
+
+    public ServicePlanData CreateEmptyPlanForClient(ClientNPC client)
+    {
+        if (!enableAdvancedWorkflow || client == null || client.RequestData == null || planningSystem == null)
+            return null;
+
+        ServicePlanData plan = planningSystem.CreatePlan(client.RequestData.RequestId);
+        plansByClient[client] = plan;
+
+        return plan;
+    }
+
+    public void SetPlanForClient(ClientNPC client, ServicePlanData plan)
+    {
+        if (client == null || plan == null)
+            return;
+
+        plansByClient[client] = plan;
+    }
+
+    public bool HasValidPlan(ClientNPC client)
+    {
+        if (client == null)
+            return false;
+
+        return plansByClient.TryGetValue(client, out ServicePlanData plan)
+            && plan != null
+            && plan.steps != null
+            && plan.steps.Count > 0;
+    }
+
+    public ServicePlanData GetPlanForClient(ClientNPC client)
+    {
+        if (client == null)
+            return null;
+
+        plansByClient.TryGetValue(client, out ServicePlanData plan);
+        return plan;
     }
 
     public bool TryExecutePlan(ClientNPC client, System.Action<AdvancedServiceResult> onFinished)
@@ -76,6 +115,41 @@ public class AdvancedServiceWorkflowManager : MonoBehaviour
         planningSystem.AddStep(plan, action, tool);
     }
 
+    public ProductInventoryState FindBestToolForActionPublic(ServiceActionType action)
+    {
+        return FindBestToolForAction(action);
+    }
+
+    public List<ProductInventoryState> GetCompatibleToolsForAction(ServiceActionType action)
+    {
+        List<ProductInventoryState> compatibleTools = new List<ProductInventoryState>();
+
+        if (InventoryManager.Instance == null)
+            return compatibleTools;
+
+        List<ProductInventoryState> all = InventoryManager.Instance.GetAllOwnedItems();
+
+        for (int i = 0; i < all.Count; i++)
+        {
+            ProductInventoryState item = all[i];
+
+            if (item == null)
+                continue;
+
+            ProductData product = InventoryManager.Instance.GetProductDataById(item.productId);
+
+            if (product == null || !item.IsUsable(product))
+                continue;
+
+            if (!ServiceToolCompatibility.IsCompatible(action, product.category))
+                continue;
+
+            compatibleTools.Add(item);
+        }
+
+        return compatibleTools;
+    }
+
     private ProductInventoryState FindBestToolForAction(ServiceActionType action)
     {
         if (InventoryManager.Instance == null)
@@ -90,6 +164,7 @@ public class AdvancedServiceWorkflowManager : MonoBehaviour
         {
             ProductInventoryState item = all[i];
             ProductData product = InventoryManager.Instance.GetProductDataById(item.productId);
+
             if (product == null || !item.IsUsable(product))
                 continue;
 
@@ -97,6 +172,7 @@ public class AdvancedServiceWorkflowManager : MonoBehaviour
                 continue;
 
             float score = item.GetNormalized() + ((product.precisao + product.velocidade + product.durabilidade) / 300f);
+
             if (score > bestScore)
             {
                 bestScore = score;
@@ -113,6 +189,7 @@ public class AdvancedServiceWorkflowManager : MonoBehaviour
             return;
 
         PlayerWallet wallet = Object.FindFirstObjectByType<PlayerWallet>();
+
         if (wallet != null)
             wallet.AddMoney(result.moneyReward);
 
