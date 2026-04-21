@@ -14,7 +14,13 @@ public class BarbershopServiceManager : MonoBehaviour
     [Header("Integrações")]
     [SerializeField] private BarberWorkController barberWorkController;
 
-    [Header("Configuração do atendimento")]
+    [Header("Atendimento avançado")]
+    [SerializeField] private AdvancedServiceWorkflowManager advancedWorkflow;
+    [SerializeField] private bool useAdvancedServiceWorkflow = true;
+    [SerializeField] private bool fallbackToOldAutoServiceIfAdvancedFails = true;
+    [SerializeField] private bool completeClientVisualFlowAfterAdvancedService = true;
+
+    [Header("Configuração do atendimento antigo")]
     [SerializeField] private bool autoCompleteServiceByTime = true;
     [SerializeField] private bool consumeInventoryOnFinish = true;
     [SerializeField] private bool sendClientAwayIfMissingItems = false;
@@ -26,6 +32,7 @@ public class BarbershopServiceManager : MonoBehaviour
 
     private ClientNPC currentClient;
     private Coroutine currentServiceRoutine;
+    private bool currentServiceUsingAdvancedWorkflow;
 
     public Transform BarberChairWalkPoint => barberChairWalkPoint;
     public Transform BarberChairSitPoint => barberChairSitPoint;
@@ -46,6 +53,9 @@ public class BarbershopServiceManager : MonoBehaviour
 
         if (barberWorkController == null)
             barberWorkController = FindFirstObjectByType<BarberWorkController>();
+
+        if (advancedWorkflow == null)
+            advancedWorkflow = FindFirstObjectByType<AdvancedServiceWorkflowManager>();
     }
 
     public bool HasClientInService()
@@ -104,6 +114,7 @@ public class BarbershopServiceManager : MonoBehaviour
         client.SetPreparedLoadout(loadout);
 
         currentClient = client;
+        currentServiceUsingAdvancedWorkflow = false;
 
         if (BarberQueueSystem.Instance != null)
             BarberQueueSystem.Instance.MarkClientAsBeingServed(client, true);
@@ -132,10 +143,207 @@ public class BarbershopServiceManager : MonoBehaviour
         if (currentServiceRoutine != null)
             StopCoroutine(currentServiceRoutine);
 
-        if (autoCompleteServiceByTime)
-            currentServiceRoutine = StartCoroutine(AutoCompleteServiceRoutine(client, expectedDuration));
+        currentServiceRoutine = StartCoroutine(WaitClientSitThenStartServiceFlow(client, expectedDuration));
 
         return true;
+    }
+
+    private IEnumerator WaitClientSitThenStartServiceFlow(ClientNPC client, float expectedDuration)
+    {
+        if (client == null)
+            yield break;
+
+        float timeout = 20f;
+        float elapsed = 0f;
+
+        while (client != null && client.CurrentState != ClientNPC.ClientState.InService && elapsed < timeout)
+        {
+            elapsed += Time.deltaTime;
+            yield return null;
+        }
+
+        if (client == null || currentClient != client)
+            yield break;
+
+        if (client.CurrentState != ClientNPC.ClientState.InService)
+        {
+            Debug.LogWarning("[BarbershopServiceManager] Cliente não chegou ao estado InService dentro do tempo esperado.");
+        }
+
+        bool advancedStarted = TryStartAdvancedServiceFlow(client);
+
+        if (advancedStarted)
+        {
+            if (enableDebugLogs)
+                Debug.Log("[BarbershopServiceManager] Atendimento avançado iniciado. Timer antigo não será usado.");
+
+            currentServiceRoutine = null;
+            yield break;
+        }
+
+        if (!fallbackToOldAutoServiceIfAdvancedFails)
+        {
+            Debug.LogWarning("[BarbershopServiceManager] Atendimento avançado falhou e fallback antigo está desligado.");
+            currentServiceRoutine = null;
+            yield break;
+        }
+
+        if (autoCompleteServiceByTime)
+        {
+            if (enableDebugLogs)
+                Debug.Log("[BarbershopServiceManager] Usando atendimento antigo automático como fallback.");
+
+            yield return AutoCompleteServiceRoutine(client, expectedDuration);
+        }
+
+        currentServiceRoutine = null;
+    }
+
+    private bool TryStartAdvancedServiceFlow(ClientNPC client)
+    {
+        if (!useAdvancedServiceWorkflow)
+        {
+            if (enableDebugLogs)
+                Debug.Log("[Atendimento Avançado] useAdvancedServiceWorkflow está desligado no BarbershopServiceManager.");
+
+            return false;
+        }
+
+        if (advancedWorkflow == null)
+        {
+            advancedWorkflow = FindFirstObjectByType<AdvancedServiceWorkflowManager>();
+        }
+
+        if (advancedWorkflow == null)
+        {
+            Debug.LogWarning("[Atendimento Avançado] AdvancedServiceWorkflowManager não encontrado na cena.");
+            return false;
+        }
+
+        if (!advancedWorkflow.EnableAdvancedWorkflow)
+        {
+            Debug.LogWarning("[Atendimento Avançado] EnableAdvancedWorkflow está desligado no AdvancedServiceWorkflowManager.");
+            return false;
+        }
+
+        if (client == null)
+        {
+            Debug.LogWarning("[Atendimento Avançado] Cliente nulo.");
+            return false;
+        }
+
+        if (client.RequestData == null)
+        {
+            Debug.LogWarning("[Atendimento Avançado] ClientNPC.RequestData está nulo.");
+            return false;
+        }
+
+        if (enableDebugLogs)
+            Debug.Log("[Atendimento Avançado] Tentando preparar plano...");
+
+        bool planPrepared = advancedWorkflow.TryPreparePlan(client);
+
+        if (!planPrepared)
+        {
+            Debug.LogWarning("[Atendimento Avançado] TryPreparePlan retornou false.");
+            return false;
+        }
+
+        if (enableDebugLogs)
+            Debug.Log("[Atendimento Avançado] Plano preparado. Tentando executar...");
+
+        bool executionStarted = advancedWorkflow.TryExecutePlan(client, result =>
+        {
+            if (enableDebugLogs)
+            {
+                string rating = result != null ? result.finalRating.ToString() : "NULL";
+                Debug.Log($"[Atendimento Avançado] Atendimento finalizado. Resultado: {rating}");
+            }
+
+            HandleAdvancedServiceFinished(client);
+        });
+
+        if (!executionStarted)
+        {
+            Debug.LogWarning("[Atendimento Avançado] TryExecutePlan retornou false.");
+            return false;
+        }
+
+        currentServiceUsingAdvancedWorkflow = true;
+        return true;
+    }
+
+    private void HandleAdvancedServiceFinished(ClientNPC client)
+    {
+        if (client == null)
+            return;
+
+        if (currentClient != client)
+        {
+            if (enableDebugLogs)
+                Debug.LogWarning("[BarbershopServiceManager] Callback do avançado recebido, mas este cliente não é mais o currentClient.");
+
+            return;
+        }
+
+        if (currentServiceRoutine != null)
+        {
+            StopCoroutine(currentServiceRoutine);
+            currentServiceRoutine = null;
+        }
+
+        if (completeClientVisualFlowAfterAdvancedService)
+        {
+            CompleteCurrentServiceAfterAdvancedReward();
+        }
+        else
+        {
+            SendCurrentClientToExitOrCashier();
+        }
+    }
+
+    private void CompleteCurrentServiceAfterAdvancedReward()
+    {
+        if (currentClient == null)
+        {
+            Debug.LogWarning("[BarbershopServiceManager] Não existe cliente atual para concluir fluxo avançado.");
+            return;
+        }
+
+        ClientNPC finishedClient = currentClient;
+        ClientRequestData request = finishedClient.RequestData;
+
+        if (request == null)
+        {
+            Debug.LogWarning("[BarbershopServiceManager] Cliente atual não possui RequestData.");
+            SendCurrentClientToExitOrCashier();
+            return;
+        }
+
+        if (currentServiceRoutine != null)
+        {
+            StopCoroutine(currentServiceRoutine);
+            currentServiceRoutine = null;
+        }
+
+        PreparedServiceLoadout loadout = finishedClient.PreparedLoadout;
+
+        if (consumeInventoryOnFinish)
+            ConsumeLoadoutItems(request, loadout);
+
+        finishedClient.MarkServiceCompleted();
+
+        UnlockEducationalContent(request);
+
+        if (enableDebugLogs)
+        {
+            Debug.Log(
+                $"[BarbershopServiceManager] Fluxo avançado concluído | Cliente: {finishedClient.name} | " +
+                $"Pedido: {request.RequestName}. Recompensa/XP já foram aplicados pelo AdvancedServiceWorkflowManager."
+            );
+        }
+
+        SendCurrentClientToExitOrCashier();
     }
 
     private PreparedServiceLoadout PrepareLoadoutForClient(ClientRequestData request)
@@ -165,11 +373,11 @@ public class BarbershopServiceManager : MonoBehaviour
         float seconds = ConvertGameMinutesToRealSeconds(duration);
 
         if (enableDebugLogs)
-            Debug.Log($"[BarbershopServiceManager] Atendimento automático durará {seconds:0.0}s reais.");
+            Debug.Log($"[BarbershopServiceManager] Atendimento automático antigo durará {seconds:0.0}s reais.");
 
         yield return new WaitForSeconds(seconds);
 
-        if (currentClient == client)
+        if (currentClient == client && !currentServiceUsingAdvancedWorkflow)
             CompleteCurrentService();
     }
 
@@ -183,6 +391,14 @@ public class BarbershopServiceManager : MonoBehaviour
         if (currentClient == null)
         {
             Debug.LogWarning("[BarbershopServiceManager] Não existe cliente atual para concluir atendimento.");
+            return;
+        }
+
+        if (currentServiceUsingAdvancedWorkflow)
+        {
+            if (enableDebugLogs)
+                Debug.LogWarning("[BarbershopServiceManager] CompleteCurrentService chamado enquanto atendimento avançado está ativo. Ignorando para evitar conclusão dupla.");
+
             return;
         }
 
@@ -237,7 +453,7 @@ public class BarbershopServiceManager : MonoBehaviour
         if (enableDebugLogs)
         {
             Debug.Log(
-                $"[BarbershopServiceManager] Atendimento concluído | Cliente: {finishedClient.name} | " +
+                $"[BarbershopServiceManager] Atendimento antigo concluído | Cliente: {finishedClient.name} | " +
                 $"Pedido: {request.RequestName} | Valor: {request.ServicePrice}"
             );
         }
@@ -249,6 +465,8 @@ public class BarbershopServiceManager : MonoBehaviour
     {
         if (currentClient == null)
             return;
+
+        currentServiceUsingAdvancedWorkflow = false;
 
         if (cashierPoint != null)
         {
@@ -452,6 +670,7 @@ public class BarbershopServiceManager : MonoBehaviour
         if (client == currentClient)
         {
             currentClient = null;
+            currentServiceUsingAdvancedWorkflow = false;
 
             if (enableDebugLogs)
                 Debug.Log($"[BarbershopServiceManager] Cliente {client.name} terminou no caixa.");
@@ -474,6 +693,13 @@ public class BarbershopServiceManager : MonoBehaviour
         if (currentClient == client)
         {
             currentClient = null;
+            currentServiceUsingAdvancedWorkflow = false;
+
+            if (currentServiceRoutine != null)
+            {
+                StopCoroutine(currentServiceRoutine);
+                currentServiceRoutine = null;
+            }
 
             if (enableDebugLogs)
                 Debug.Log($"[BarbershopServiceManager] Cliente {client.name} liberado do atendimento.");
@@ -541,6 +767,4 @@ public class BarbershopServiceManager : MonoBehaviour
         Debug.LogWarning("[BarbershopServiceManager] Nenhum cliente em WaitingForService encontrado.");
         return false;
     }
-
-
 }
