@@ -21,6 +21,9 @@ public class ServiceEvaluationUI : MonoBehaviour
     [SerializeField] private Slider equipmentScoreSlider;
     [SerializeField] private Slider comfortScoreSlider;
 
+    [Header("Configuração")]
+    [SerializeField] private bool enableDebugLogs = true;
+
     private readonly CultureInfo brazilCulture = new CultureInfo("pt-BR");
 
     private void Start()
@@ -57,10 +60,118 @@ public class ServiceEvaluationUI : MonoBehaviour
         SetSlider(comfortScoreSlider, result.comfortScore);
     }
 
+    public void ShowAdvanced(AdvancedServiceResult result)
+    {
+        if (result == null)
+        {
+            if (enableDebugLogs)
+                Debug.LogWarning("[ServiceEvaluationUI] AdvancedServiceResult nulo. Não foi possível mostrar avaliação avançada.");
+
+            return;
+        }
+
+        if (panel != null)
+            panel.SetActive(true);
+
+        float finalScore = Mathf.Clamp(result.finalScore, 0f, 5f);
+        float timeScore = CalculateAdvancedTimeScore(result);
+        float qualityScore = finalScore;
+        float waitingScore = 5f;
+        float barberConditionScore = finalScore;
+        float equipmentScore = finalScore;
+        float comfortScore = 4f;
+
+        SetText(finalScoreText, $"{Format(finalScore)}/5");
+        SetText(finalCommentText, BuildAdvancedFinalComment(result));
+
+        SetSlider(finalScoreSlider, finalScore);
+        SetSlider(waitingScoreSlider, waitingScore);
+        SetSlider(qualityScoreSlider, qualityScore);
+        SetSlider(timeScoreSlider, timeScore);
+        SetSlider(barberConditionScoreSlider, barberConditionScore);
+        SetSlider(equipmentScoreSlider, equipmentScore);
+        SetSlider(comfortScoreSlider, comfortScore);
+
+        if (enableDebugLogs)
+        {
+            Debug.Log(
+                $"[ServiceEvaluationUI] Avaliação avançada exibida | " +
+                $"Nota: {finalScore:0.0}/5 | Resultado: {result.finalRating}"
+            );
+        }
+    }
+
     public void Hide()
     {
         if (panel != null)
             panel.SetActive(false);
+    }
+
+    private float CalculateAdvancedTimeScore(AdvancedServiceResult result)
+    {
+        if (result == null)
+            return 3f;
+
+        float expected = Mathf.Max(0.1f, result.expectedClientMinutes);
+        float actual = Mathf.Max(0.1f, result.actualTotalMinutes);
+        float difference = Mathf.Abs(actual - expected);
+        float percentage = difference / expected;
+
+        if (percentage <= 0.10f)
+            return 5f;
+
+        if (percentage <= 0.25f)
+            return 4f;
+
+        if (percentage <= 0.40f)
+            return 3f;
+
+        if (percentage <= 0.60f)
+            return 2f;
+
+        return 1f;
+    }
+
+    private string BuildAdvancedFinalComment(AdvancedServiceResult result)
+    {
+        if (result == null)
+            return "Atendimento finalizado.";
+
+        string ratingText = ConvertFinalRatingToText(result.finalRating);
+        string timeText = BuildTimeComment(result);
+
+        return $"Avaliação do cliente: {ratingText}. {timeText}";
+    }
+
+    private string BuildTimeComment(AdvancedServiceResult result)
+    {
+        float expected = Mathf.Max(0.1f, result.expectedClientMinutes);
+        float actual = Mathf.Max(0.1f, result.actualTotalMinutes);
+
+        if (actual <= expected * 0.9f)
+            return "O atendimento foi rápido.";
+
+        if (actual <= expected * 1.15f)
+            return "O tempo do atendimento ficou dentro do esperado.";
+
+        if (actual <= expected * 1.4f)
+            return "O atendimento demorou um pouco mais que o esperado.";
+
+        return "O atendimento demorou bastante e isso afetou a experiência.";
+    }
+
+    private string ConvertFinalRatingToText(ServiceFinalRating rating)
+    {
+        return rating switch
+        {
+            ServiceFinalRating.Horrivel => "horrível",
+            ServiceFinalRating.Ruim => "ruim",
+            ServiceFinalRating.MaisOuMenos => "mais ou menos",
+            ServiceFinalRating.Bom => "bom",
+            ServiceFinalRating.Maravilhoso => "maravilhoso",
+            ServiceFinalRating.Perfeito => "perfeito",
+            _ => "indefinida"
+        };
     }
 
     private void ConfigureSlider(Slider slider)

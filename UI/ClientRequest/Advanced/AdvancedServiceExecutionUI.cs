@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using TMPro;
 using UnityEngine;
@@ -14,6 +15,7 @@ public class AdvancedServiceExecutionUI : MonoBehaviour
 
     [Header("Fechamento automático")]
     [SerializeField] private float closeDelayAfterFinish = 3f;
+    [SerializeField] private bool enableDebugLogs = true;
 
     private Coroutine closeRoutine;
 
@@ -22,8 +24,10 @@ public class AdvancedServiceExecutionUI : MonoBehaviour
         if (executionSystem == null)
             executionSystem = FindFirstObjectByType<ServiceExecutionSystem>();
 
-        if (root != null)
-            root.SetActive(false);
+        if (root == null)
+            root = gameObject;
+
+        Hide();
     }
 
     private void OnEnable()
@@ -32,7 +36,12 @@ public class AdvancedServiceExecutionUI : MonoBehaviour
             executionSystem = FindFirstObjectByType<ServiceExecutionSystem>();
 
         if (executionSystem == null)
+        {
+            if (enableDebugLogs)
+                Debug.LogWarning("[AdvancedServiceExecutionUI] ServiceExecutionSystem não encontrado.");
+
             return;
+        }
 
         executionSystem.OnActionProgress += HandleProgress;
         executionSystem.OnActionCompleted += HandleCompleted;
@@ -82,24 +91,44 @@ public class AdvancedServiceExecutionUI : MonoBehaviour
 
     public void HideAfterDelay()
     {
-        HideAfterDelay(closeDelayAfterFinish);
+        HideAfterDelay(closeDelayAfterFinish, null);
     }
 
     public void HideAfterDelay(float delay)
     {
+        HideAfterDelay(delay, null);
+    }
+
+    public void HideAfterDelay(float delay, Action onHidden)
+    {
+        if (enableDebugLogs)
+            Debug.Log($"[AdvancedServiceExecutionUI] HideAfterDelay chamado. Fechando em {delay:0.0}s.");
+
+        if (!gameObject.activeInHierarchy)
+        {
+            Debug.LogWarning("[AdvancedServiceExecutionUI] Este GameObject está desativado. Coloque este script em um objeto ativo, como AdvancedServiceUIRoot.");
+            onHidden?.Invoke();
+            return;
+        }
+
         if (closeRoutine != null)
             StopCoroutine(closeRoutine);
 
-        closeRoutine = StartCoroutine(HideAfterDelayRoutine(delay));
+        closeRoutine = StartCoroutine(HideAfterDelayRoutine(delay, onHidden));
     }
 
-    private IEnumerator HideAfterDelayRoutine(float delay)
+    private IEnumerator HideAfterDelayRoutine(float delay, Action onHidden)
     {
         yield return new WaitForSeconds(delay);
+
+        if (enableDebugLogs)
+            Debug.Log("[AdvancedServiceExecutionUI] Fechando painel agora.");
 
         Hide();
 
         closeRoutine = null;
+
+        onHidden?.Invoke();
     }
 
     public void Show()

@@ -20,6 +20,9 @@ public class BarbershopServiceManager : MonoBehaviour
     [SerializeField] private bool fallbackToOldAutoServiceIfAdvancedFails = true;
     [SerializeField] private bool completeClientVisualFlowAfterAdvancedService = true;
 
+    [Header("Tempos das UIs")]
+    [SerializeField] private float advancedExecutionUiCloseDelay = 3f;
+
     [Header("Configuração do atendimento antigo")]
     [SerializeField] private bool autoCompleteServiceByTime = true;
     [SerializeField] private bool consumeInventoryOnFinish = true;
@@ -260,7 +263,7 @@ public class BarbershopServiceManager : MonoBehaviour
                 Debug.Log($"[Atendimento Avançado] Atendimento finalizado. Resultado: {rating}");
             }
 
-            HandleAdvancedServiceFinished(client);
+            HandleAdvancedServiceFinished(client, result);
         });
 
         if (!executionStarted)
@@ -273,7 +276,7 @@ public class BarbershopServiceManager : MonoBehaviour
         return true;
     }
 
-    private void HandleAdvancedServiceFinished(ClientNPC client)
+    private void HandleAdvancedServiceFinished(ClientNPC client, AdvancedServiceResult result)
     {
         if (client == null)
             return;
@@ -290,6 +293,43 @@ public class BarbershopServiceManager : MonoBehaviour
         {
             StopCoroutine(currentServiceRoutine);
             currentServiceRoutine = null;
+        }
+
+        AdvancedServiceExecutionUI executionUI =
+            FindFirstObjectByType<AdvancedServiceExecutionUI>(FindObjectsInactive.Include);
+
+        if (executionUI != null)
+        {
+            executionUI.HideAfterDelay(advancedExecutionUiCloseDelay, () =>
+            {
+                ShowAdvancedEvaluationThenFinish(client, result);
+            });
+        }
+        else
+        {
+            Debug.LogWarning("[BarbershopServiceManager] AdvancedServiceExecutionUI não encontrada. Exibindo avaliação imediatamente.");
+            ShowAdvancedEvaluationThenFinish(client, result);
+        }
+    }
+
+    private void ShowAdvancedEvaluationThenFinish(ClientNPC client, AdvancedServiceResult result)
+    {
+        if (client == null)
+            return;
+
+        if (currentClient != client)
+            return;
+
+        ServiceEvaluationUI evaluationUI =
+            FindFirstObjectByType<ServiceEvaluationUI>(FindObjectsInactive.Include);
+
+        if (evaluationUI != null && result != null)
+        {
+            evaluationUI.ShowAdvanced(result);
+        }
+        else
+        {
+            Debug.LogWarning("[BarbershopServiceManager] ServiceEvaluationUI não encontrada ou resultado avançado nulo.");
         }
 
         if (completeClientVisualFlowAfterAdvancedService)
