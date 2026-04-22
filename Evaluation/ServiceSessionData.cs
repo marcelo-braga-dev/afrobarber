@@ -28,6 +28,11 @@ public class ServiceSessionData
     public bool usedGoodProducts;
     public bool hadMistakes;
 
+    public int finalChargedPrice;
+    public int suggestedPrice;
+    public float pricingSatisfactionScore = 1f;
+    public float overworkMultiplier = 1f;
+
     public float GetAverageToolQuality()
     {
         return (equipmentQualityScore + productQualityScore) * 0.5f;

@@ -150,6 +150,7 @@ public class BarbershopServiceManager : MonoBehaviour
             barberWorkController.SetCurrentServiceInfo(request.RequestName, request.ServicePrice);
             barberWorkController.StartService(
                 client,
+                request,
                 expectedDuration,
                 equipmentQuality,
                 productQuality,
@@ -998,6 +999,16 @@ public class BarbershopServiceManager : MonoBehaviour
         }
 
         Debug.Log($"[BarbershopServiceManager] Pagamento recebido: R$ {request.ServicePrice} | Serviço: {request.RequestName}");
+
+        if (ClientSpawnerLocator.TryGet(out ClientSpawner spawner))
+        {
+            int finalPrice = request.ServicePrice;
+            int suggestedPrice = GlobalGameplayManagement.Instance != null
+                ? GlobalGameplayManagement.Instance.CalculateSuggestedPriceForRequest(request)
+                : finalPrice;
+
+            spawner.UpdateDemandMultiplierFromServicePrice(finalPrice, suggestedPrice);
+        }
     }
 
     public void NotifyClientFinishedCashier(ClientNPC client)

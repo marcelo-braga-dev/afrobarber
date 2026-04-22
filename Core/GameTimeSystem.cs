@@ -101,6 +101,10 @@ public class GameTimeSystem : MonoBehaviour
     public string DisplayedDayShortText => GetPortugueseDayShort(DisplayedDateTime.DayOfWeek);
     public string DisplayedFullFormattedText => $"{DisplayedTimeText} {DisplayedDayShortText} {DisplayedDateText}";
 
+    public int OpeningHour => openingHour;
+    public int OpeningMinute => openingMinute;
+    public int ClosingHour => closingHour;
+    public int ClosingMinute => closingMinute;
     public int OpeningTotalMinutes => openingHour * 60 + openingMinute;
     public int ClosingTotalMinutes => closingHour * 60 + closingMinute;
     public int CityRestCallTotalMinutes => cityRestCallHour * 60 + cityRestCallMinute;
@@ -307,6 +311,27 @@ public class GameTimeSystem : MonoBehaviour
         openingMinute = Mathf.Clamp(openMinute, 0, 59);
         closingHour = Mathf.Clamp(closeHour, 0, 23);
         closingMinute = Mathf.Clamp(closeMinute, 0, 59);
+
+        NotifyTimeChanged();
+        NotifyDisplayedTimeChanged();
+    }
+
+    public void SetWorkDays(
+        bool mondayValue,
+        bool tuesdayValue,
+        bool wednesdayValue,
+        bool thursdayValue,
+        bool fridayValue,
+        bool saturdayValue,
+        bool sundayValue)
+    {
+        monday = mondayValue;
+        tuesday = tuesdayValue;
+        wednesday = wednesdayValue;
+        thursday = thursdayValue;
+        friday = fridayValue;
+        saturday = saturdayValue;
+        sunday = sundayValue;
 
         NotifyTimeChanged();
         NotifyDisplayedTimeChanged();

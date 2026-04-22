@@ -34,15 +34,12 @@ public class ClientSpawner : MonoBehaviour
 
     private Coroutine spawnRoutine;
     private bool clientsDismissedForClosedHours;
-
-
+    private float demandMultiplier = 1f;
 
     private void Awake()
     {
         AutoFindReferences();
     }
-
-
 
     private void AutoFindReferences()
     {
@@ -107,7 +104,17 @@ public class ClientSpawner : MonoBehaviour
         if (GameTimeSystem.Instance == null)
             return true;
 
-        return GameTimeSystem.Instance.IsWorkDay && GameTimeSystem.Instance.IsWithinBusinessHours;
+        bool baseOpen = GameTimeSystem.Instance.IsWorkDay && GameTimeSystem.Instance.IsWithinBusinessHours;
+
+        if (!baseOpen)
+            return false;
+
+        float spawnChance = Mathf.Clamp(demandMultiplier, 0.2f, 2f);
+
+        if (spawnChance >= 1f)
+            return true;
+
+        return Random.value <= spawnChance;
     }
 
     public bool TrySpawnClient()
@@ -258,6 +265,20 @@ public class ClientSpawner : MonoBehaviour
                 $"[ClientSpawner] Cliente {client.name} spawnado sem request fixo e sem fallback."
             );
         }
+    }
+
+    public void UpdateDemandMultiplierFromServicePrice(int finalPrice, int suggestedPrice)
+    {
+        if (GlobalGameplayManagement.Instance == null)
+        {
+            demandMultiplier = 1f;
+            return;
+        }
+
+        demandMultiplier = GlobalGameplayManagement.Instance.GetSpawnDemandMultiplierFromLastService(
+            finalPrice,
+            suggestedPrice
+        );
     }
 
     public void DismissAllClientsDueToClosingTime()

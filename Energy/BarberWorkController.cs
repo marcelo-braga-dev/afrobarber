@@ -22,6 +22,7 @@ public class BarberWorkController : MonoBehaviour
 
     public void StartService(
         ClientNPC clientNPC,
+        ClientRequestData requestData,
         float expectedDurationMinutes,
         float equipmentQuality,
         float productQuality,
@@ -59,6 +60,29 @@ public class BarberWorkController : MonoBehaviour
         currentSession.productQualityScore = Mathf.Clamp(productQuality, 0f, 5f);
         currentSession.environmentComfortScore = Mathf.Clamp(comfortScore, 0f, 5f);
         currentSession.barberEnergyAtStart = PlayerEnergySystem.Instance.CurrentEnergy;
+
+        // 🔥 NOVO: sistema de preço e satisfação
+        if (requestData != null)
+        {
+            currentSession.finalChargedPrice = requestData.ServicePrice;
+
+            if (GlobalGameplayManagement.Instance != null)
+            {
+                currentSession.suggestedPrice =
+                    GlobalGameplayManagement.Instance.CalculateSuggestedPriceForRequest(requestData);
+
+                currentSession.pricingSatisfactionScore =
+                    GlobalGameplayManagement.Instance.GetPriceSatisfactionScore(
+                        currentSession.finalChargedPrice,
+                        currentSession.suggestedPrice
+                    );
+            }
+            else
+            {
+                currentSession.suggestedPrice = currentSession.finalChargedPrice;
+                currentSession.pricingSatisfactionScore = 1f;
+            }
+        }
     }
 
     public float GetAdjustedServiceDuration(float baseDurationMinutes)
@@ -103,7 +127,9 @@ public class BarberWorkController : MonoBehaviour
             return null;
         }
 
-        currentSession.serviceEndGameMinutes = GameTimeSystem.Instance != null ? GameTimeSystem.Instance.TotalMinutesElapsed : 0f;
+        currentSession.serviceEndGameMinutes =
+            GameTimeSystem.Instance != null ? GameTimeSystem.Instance.TotalMinutesElapsed : 0f;
+
         currentSession.actualServiceDurationMinutes = Mathf.Max(1f, actualDurationMinutes);
         currentSession.barberEnergyAtEnd = PlayerEnergySystem.Instance.CurrentEnergy;
         currentSession.hadMistakes = hadMistakes;
@@ -111,9 +137,21 @@ public class BarberWorkController : MonoBehaviour
         currentSession.usedGoodProducts = productQuality >= 3.5f;
         currentSession.equipmentQualityScore = Mathf.Clamp(equipmentQuality, 0f, 5f);
         currentSession.productQualityScore = Mathf.Clamp(productQuality, 0f, 5f);
-        currentSession.manualServiceQualityScore = CalculateFinalQualityScore(equipmentQuality, productQuality, hadMistakes);
+        currentSession.manualServiceQualityScore =
+            CalculateFinalQualityScore(equipmentQuality, productQuality, hadMistakes);
 
-        float energyCost = CalculateEnergyCost(currentSession.actualServiceDurationMinutes, currentSession.expectedServiceDurationMinutes);
+        float energyCost =
+            CalculateEnergyCost(currentSession.actualServiceDurationMinutes,
+                                currentSession.expectedServiceDurationMinutes);
+
+        // 🔥 NOVO: sistema de overwork (cansaço dinâmico)
+        if (GlobalGameplayManagement.Instance != null)
+        {
+            currentSession.overworkMultiplier =
+                GlobalGameplayManagement.Instance.GetOverworkEnergyMultiplier();
+
+            energyCost *= currentSession.overworkMultiplier;
+        }
 
         PlayerEnergySystem.Instance.ConsumeEnergy(energyCost);
         PlayerEnergySystem.Instance.AddFatigue(energyCost * 0.8f);

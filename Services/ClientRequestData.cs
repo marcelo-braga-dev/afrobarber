@@ -19,6 +19,7 @@ public class ClientRequestData : ScriptableObject
     public HaircutType haircutType;
     public ServiceType serviceType = ServiceType.CorteDeCabelo;
     public string customServiceId;
+    public List<ServiceType> additionalServiceTypes = new List<ServiceType>();
 
     [Header("Preço / Tempo / Dificuldade")]
     public int servicePrice = 30;
@@ -80,6 +81,9 @@ public class ClientRequestData : ScriptableObject
     {
         get
         {
+            if (GlobalGameplayManagement.Instance != null)
+                return GlobalGameplayManagement.Instance.CalculateFinalPriceForRequest(this);
+
             if (priceTable != null)
                 return priceTable.GetPrice(serviceType, customServiceId);
 
@@ -146,6 +150,30 @@ public class ClientRequestData : ScriptableObject
         return !string.IsNullOrWhiteSpace(historyTitle) ||
                !string.IsNullOrWhiteSpace(historySummary) ||
                !string.IsNullOrWhiteSpace(afroCutId);
+    }
+
+    public int GetBaseTablePriceWithoutGlobalManagement()
+    {
+        int total = 0;
+
+        if (priceTable != null)
+        {
+            total += priceTable.GetPrice(serviceType, customServiceId);
+
+            if (additionalServiceTypes != null)
+            {
+                for (int i = 0; i < additionalServiceTypes.Count; i++)
+                {
+                    ServiceType extraType = additionalServiceTypes[i];
+                    total += priceTable.GetPrice(extraType);
+                }
+            }
+
+            return Mathf.Max(0, total);
+        }
+
+        total += Mathf.Max(0, servicePrice);
+        return Mathf.Max(0, total);
     }
 
     public void SyncCompatibilityFields()
