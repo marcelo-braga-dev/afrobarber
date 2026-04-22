@@ -4,6 +4,7 @@ public class DialogueGameplayActionRouter : MonoBehaviour
 {
     [Header("Referências")]
     [SerializeField] private BarbershopServiceManager serviceManager;
+    [SerializeField] private NPCConversationBrain focusedConversationBrain;
 
     private bool isSubscribed;
 
@@ -25,6 +26,11 @@ public class DialogueGameplayActionRouter : MonoBehaviour
         Unsubscribe();
     }
 
+    public void SetFocusedConversationBrain(NPCConversationBrain brain)
+    {
+        focusedConversationBrain = brain;
+    }
+
     private void TrySubscribe()
     {
         if (isSubscribed)
@@ -41,8 +47,6 @@ public class DialogueGameplayActionRouter : MonoBehaviour
         GlobalDialogueManager.Instance.OnPlayerOptionTriggered += HandlePlayerOptionTriggered;
 
         isSubscribed = true;
-
-        Debug.Log("[DialogueGameplayActionRouter] Inscrito no evento OnPlayerOptionTriggered.");
     }
 
     private void Unsubscribe()
@@ -58,12 +62,7 @@ public class DialogueGameplayActionRouter : MonoBehaviour
     private void HandlePlayerOptionTriggered(DialogueSpeechOption option)
     {
         if (option == null)
-        {
-            Debug.LogWarning("[DialogueGameplayActionRouter] Opção recebida está nula.");
             return;
-        }
-
-        Debug.Log($"[DialogueGameplayActionRouter] Recebeu opção: {option.label} | Action: {option.action}");
 
         switch (option.action)
         {
@@ -72,24 +71,15 @@ public class DialogueGameplayActionRouter : MonoBehaviour
                 break;
 
             case DialogueSpeechOptionAction.CloseShopForNewClients:
-                GlobalDialogueManager.Instance.AddSystemMessage(
-                    "Você decidiu não receber mais novos clientes hoje.",
-                    DialogueContextType.Queue
-                );
+                GlobalDialogueManager.Instance.AddSystemMessage("Você decidiu não receber mais novos clientes hoje.", DialogueContextType.Queue);
                 break;
 
             case DialogueSpeechOptionAction.OpenShopForNewClients:
-                GlobalDialogueManager.Instance.AddSystemMessage(
-                    "Você voltou a receber novos clientes.",
-                    DialogueContextType.Queue
-                );
+                GlobalDialogueManager.Instance.AddSystemMessage("Você voltou a receber novos clientes.", DialogueContextType.Queue);
                 break;
 
             case DialogueSpeechOptionAction.AskServicePreference:
-                GlobalDialogueManager.Instance.AddSystemMessage(
-                    "Você perguntou ao cliente sobre a preferência do atendimento.",
-                    option.contextType
-                );
+                GlobalDialogueManager.Instance.AddSystemMessage("Você perguntou ao cliente sobre a preferência do atendimento.", option.contextType);
                 break;
 
             case DialogueSpeechOptionAction.StartService:
@@ -97,17 +87,36 @@ public class DialogueGameplayActionRouter : MonoBehaviour
                 break;
 
             case DialogueSpeechOptionAction.SayWillTakeLong:
-                GlobalDialogueManager.Instance.AddSystemMessage(
-                    "Você avisou que o atendimento pode demorar um pouco.",
-                    option.contextType
-                );
+                GlobalDialogueManager.Instance.AddSystemMessage("Você avisou que o atendimento pode demorar um pouco.", option.contextType);
                 break;
 
-            case DialogueSpeechOptionAction.None:
-            default:
-                Debug.Log("[DialogueGameplayActionRouter] Nenhuma ação configurada para esta opção.");
+            case DialogueSpeechOptionAction.AskForPatience:
+                GlobalDialogueManager.Instance.AddSystemMessage("Você pediu calma e informou que já vai chamar.", option.contextType);
+                break;
+
+            case DialogueSpeechOptionAction.Apologize:
+                GlobalDialogueManager.Instance.AddSystemMessage("Você pediu desculpas pela espera.", option.contextType);
+                break;
+
+            case DialogueSpeechOptionAction.PromisePriority:
+                GlobalDialogueManager.Instance.AddSystemMessage("Você prometeu priorizar o acabamento desse cliente.", option.contextType);
+                break;
+
+            case DialogueSpeechOptionAction.CommentCity:
+                GlobalDialogueManager.Instance.AddSystemMessage("Você comentou sobre o movimento da cidade.", option.contextType);
+                break;
+
+            case DialogueSpeechOptionAction.CommentCulture:
+                GlobalDialogueManager.Instance.AddSystemMessage("Você comentou sobre um evento cultural local.", option.contextType);
+                break;
+
+            case DialogueSpeechOptionAction.EndConversation:
+                GlobalDialogueManager.Instance.AddSystemMessage("Conversa encerrada.", option.contextType);
                 break;
         }
+
+        NPCConversationBrain brain = focusedConversationBrain != null ? focusedConversationBrain : FindObjectOfType<NPCConversationBrain>();
+        brain?.ProcessPlayerOption(option);
     }
 
     private void CallNextClient()
@@ -116,26 +125,13 @@ public class DialogueGameplayActionRouter : MonoBehaviour
             serviceManager = FindObjectOfType<BarbershopServiceManager>();
 
         if (serviceManager == null)
-        {
-            Debug.LogWarning("[DialogueGameplayActionRouter] BarbershopServiceManager não encontrado.");
             return;
-        }
 
         bool success = serviceManager.CallNextClientFromQueue();
 
         if (success)
-        {
-            GlobalDialogueManager.Instance.AddSystemMessage(
-                "Chamando o próximo cliente da fila.",
-                DialogueContextType.Queue
-            );
-        }
+            GlobalDialogueManager.Instance.AddSystemMessage("Chamando o próximo cliente da fila.", DialogueContextType.Queue);
         else
-        {
-            GlobalDialogueManager.Instance.AddSystemMessage(
-                "Não há clientes disponíveis na fila.",
-                DialogueContextType.Queue
-            );
-        }
+            GlobalDialogueManager.Instance.AddSystemMessage("Não há clientes disponíveis na fila.", DialogueContextType.Queue);
     }
 }

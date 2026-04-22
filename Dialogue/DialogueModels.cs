@@ -18,7 +18,10 @@ public enum DialogueContextType
     Service,
     City,
     Tutorial,
-    CulturalEvent
+    CulturalEvent,
+    Farewell,
+    Complaint,
+    Friendship
 }
 
 public enum DialogueSpeechOptionAction
@@ -29,7 +32,49 @@ public enum DialogueSpeechOptionAction
     OpenShopForNewClients,
     AskServicePreference,
     StartService,
-    SayWillTakeLong
+    SayWillTakeLong,
+    AskForPatience,
+    Apologize,
+    PromisePriority,
+    CommentCity,
+    CommentCulture,
+    EndConversation
+}
+
+public enum DialogueSocialIntent
+{
+    None,
+    Greet,
+    AskAttention,
+    Complain,
+    Praise,
+    AskSpeed,
+    AskPrecision,
+    ReaffirmPreference,
+    Joke,
+    CommentCity,
+    CommentCulture,
+    ChargePromise,
+    Farewell,
+    BuildFriendship,
+    ReduceTension,
+    Pressure,
+    InterruptSilence,
+    Teach,
+    AnswerPlayer,
+    AskPatience,
+    ProfessionalAssurance,
+    Apologize,
+    Promise
+}
+
+public enum DialogueOptionTone
+{
+    Neutral,
+    Empathetic,
+    Professional,
+    Playful,
+    Firm
 }
 
 [Serializable]
@@ -66,6 +111,13 @@ public class DialogueSpeechOption
     public string label;
     public DialogueContextType contextType;
     public DialogueSpeechOptionAction action;
+    public DialogueSocialIntent intent;
+    public DialogueOptionTone tone;
+    [Range(-1f, 1f)] public float tensionDelta;
+    [Range(-1f, 1f)] public float trustDelta;
+    [Range(-1f, 1f)] public float patienceDelta;
+    public float minRelationshipLevel;
+    public bool unlocksFollowUp;
 }
 
 [Serializable]

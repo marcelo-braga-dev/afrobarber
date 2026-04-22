@@ -1,0 +1,84 @@
+{
+  "lines": [
+    {
+      "id": "queue_attention_default",
+      "npcId": "",
+      "context": 1,
+      "mood": 0,
+      "intent": 2,
+      "text": "Mestre, quando puder me chama aí.",
+      "minRelationship": -100,
+      "unlockTopic": "queue_small_talk"
+    },
+    {
+      "id": "queue_complain_default",
+      "npcId": "",
+      "context": 1,
+      "mood": 2,
+      "intent": 3,
+      "text": "Tá demorando hoje, hein? Tô quase vazando.",
+      "minRelationship": -100,
+      "unlockTopic": "queue_pressure"
+    },
+    {
+      "id": "queue_interrupt_default",
+      "npcId": "",
+      "context": 1,
+      "mood": 0,
+      "intent": 16,
+      "text": "Movimento tá grande hoje, né?",
+      "minRelationship": -100,
+      "unlockTopic": "city_flow"
+    },
+    {
+      "id": "queue_reduce_tension",
+      "npcId": "",
+      "context": 1,
+      "mood": 2,
+      "intent": 14,
+      "text": "Fechou, vou segurar mais um pouco então.",
+      "minRelationship": -100,
+      "unlockTopic": "accepted_apology"
+    },
+    {
+      "id": "service_answer_default",
+      "npcId": "",
+      "context": 2,
+      "mood": 0,
+      "intent": 18,
+      "text": "Quero um acabamento caprichado, sem pressa no detalhe.",
+      "minRelationship": -100,
+      "unlockTopic": "service_preference_detail"
+    },
+    {
+      "id": "service_charge_promise",
+      "npcId": "",
+      "context": 2,
+      "mood": 0,
+      "intent": 11,
+      "text": "Lembra da prioridade que você prometeu, beleza?",
+      "minRelationship": -100,
+      "unlockTopic": "promise_tracking"
+    },
+    {
+      "id": "city_comment",
+      "npcId": "",
+      "context": 3,
+      "mood": 1,
+      "intent": 9,
+      "text": "O bairro tá cheio hoje, rende conversa boa.",
+      "minRelationship": -100,
+      "unlockTopic": "city_commentary"
+    },
+    {
+      "id": "culture_comment",
+      "npcId": "",
+      "context": 5,
+      "mood": 4,
+      "intent": 10,
+      "text": "Mais tarde vai ter evento cultural na praça, vai colar?",
+      "minRelationship": -100,
+      "unlockTopic": "culture_event"
+    }
+  ]
+}

@@ -6,6 +6,7 @@ using UnityEngine.UI;
 public class DialogueOptionsButtonUI : MonoBehaviour
 {
     [SerializeField] private DialogueContextType currentContext = DialogueContextType.Queue;
+    [SerializeField] private NPCConversationBrain targetConversationBrain;
     [SerializeField] private Button openButton;
     [SerializeField] private GameObject optionsPanel;
     [SerializeField] private Button optionButtonPrefab;
@@ -27,6 +28,14 @@ public class DialogueOptionsButtonUI : MonoBehaviour
             RebuildOptions();
     }
 
+    public void SetConversationTarget(NPCConversationBrain brain)
+    {
+        targetConversationBrain = brain;
+
+        if (targetConversationBrain != null)
+            currentContext = targetConversationBrain.ResolveCurrentContext();
+    }
+
     public void ToggleOptions()
     {
         if (optionsPanel == null)
@@ -46,7 +55,7 @@ public class DialogueOptionsButtonUI : MonoBehaviour
         for (int i = optionsContainer.childCount - 1; i >= 0; i--)
             Destroy(optionsContainer.GetChild(i).gameObject);
 
-        List<DialogueSpeechOption> options = DialogueContextOptionsProvider.GetOptions(currentContext);
+        List<DialogueSpeechOption> options = DialogueContextOptionsProvider.GetOptions(currentContext, targetConversationBrain);
 
         for (int i = 0; i < options.Count; i++)
         {
