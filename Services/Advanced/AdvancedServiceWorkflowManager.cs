@@ -215,6 +215,15 @@ public class AdvancedServiceWorkflowManager : MonoBehaviour
             $"Atendimento finalizado: {result.finalRating} | +R$ {result.moneyReward} | +XP {result.xpReward}",
             DialogueContextType.Service
         );
+
+        if (MissionSystem.Instance != null)
+        {
+            MissionSystem.Instance.RegisterServiceCompleted(
+                request,
+                Mathf.Max(0, result.moneyReward),
+                Mathf.Max(0f, result.actualTotalMinutes)
+            );
+        }
     }
 
     private void HandleActionCompleted(ServiceActionExecutionResult actionResult)

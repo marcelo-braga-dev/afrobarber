@@ -775,10 +775,17 @@ public class BarbershopServiceManager : MonoBehaviour
         UnlockEducationalContent(request);
 
         AddServicePayment(request, evaluationResult);
-
         AddServiceXP(request);
-
         AddServiceRating(evaluationResult, equipmentQuality, productQuality);
+
+        if (MissionSystem.Instance != null)
+        {
+            MissionSystem.Instance.RegisterServiceCompleted(
+                request,
+                Mathf.Max(0, request.ServicePrice),
+                Mathf.Max(0f, actualDuration)
+            );
+        }
 
         if (enableDebugLogs)
         {
