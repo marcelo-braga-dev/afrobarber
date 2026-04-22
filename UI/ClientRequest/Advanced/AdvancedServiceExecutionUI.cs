@@ -13,6 +13,42 @@ public class AdvancedServiceExecutionUI : MonoBehaviour
     [SerializeField] private Slider progressSlider;
     [SerializeField] private TMP_Text resultText;
 
+    [Header("Textos principais")]
+    [SerializeField] private string actionLabelPrefix = "Ação";
+    [SerializeField] private string toolLabelPrefix = "Ferramenta";
+    [SerializeField] private string resultLabelPrefix = "Resultado";
+    [SerializeField] private string labelSeparator = ": ";
+    [SerializeField] private string emptyToolText = "nenhuma";
+
+    [Header("Exibir prefixos")]
+    [SerializeField] private bool showActionPrefix = true;
+    [SerializeField] private bool showToolPrefix = true;
+    [SerializeField] private bool showResultPrefix = true;
+
+    [Header("Nomes das ações")]
+    [SerializeField] private string washActionText = "Lavar";
+    [SerializeField] private string combActionText = "Pentear";
+    [SerializeField] private string cutActionText = "Cortar";
+    [SerializeField] private string razorActionText = "Navalha";
+    [SerializeField] private string finishActionText = "Acabamento";
+    [SerializeField] private string defineActionText = "Definir";
+    [SerializeField] private string beardActionText = "Barba";
+    [SerializeField] private string finalizeActionText = "Finalizar";
+
+    [Header("Nomes das avaliações por etapa")]
+    [SerializeField] private string horribleRatingText = "Horrível";
+    [SerializeField] private string badRatingText = "Ruim";
+    [SerializeField] private string mediumRatingText = "Mais ou menos";
+    [SerializeField] private string goodRatingText = "Bom";
+    [SerializeField] private string greatRatingText = "Ótimo";
+    [SerializeField] private string perfectRatingText = "Perfeito";
+
+    [Header("Formato do resultado")]
+    [SerializeField] private bool showResultScore = true;
+    [SerializeField] private string scoreOpenText = " (";
+    [SerializeField] private string scoreCloseText = ")";
+    [SerializeField] private string scoreFormat = "0.0";
+
     [Header("Fechamento automático")]
     [SerializeField] private float closeDelayAfterFinish = 3f;
     [SerializeField] private bool enableDebugLogs = true;
@@ -67,12 +103,10 @@ public class AdvancedServiceExecutionUI : MonoBehaviour
         }
 
         if (actionNameText != null)
-            actionNameText.text = $"Ação: {step.actionType}";
+            actionNameText.text = BuildLabel(showActionPrefix, actionLabelPrefix, GetActionDisplayName(step.actionType));
 
         if (toolNameText != null)
-            toolNameText.text = string.IsNullOrWhiteSpace(step.productId)
-                ? "Ferramenta: nenhuma"
-                : $"Ferramenta: {step.productId}";
+            toolNameText.text = BuildLabel(showToolPrefix, toolLabelPrefix, GetToolDisplayName(step));
 
         if (progressSlider != null)
             progressSlider.value = progress;
@@ -86,7 +120,81 @@ public class AdvancedServiceExecutionUI : MonoBehaviour
         Show();
 
         if (resultText != null)
-            resultText.text = $"Resultado: {result.rating} ({result.score:0.0})";
+            resultText.text = BuildResultText(result);
+    }
+
+    private string BuildResultText(ServiceActionExecutionResult result)
+    {
+        if (result == null)
+            return "";
+
+        string ratingText = GetRatingDisplayName(result.rating);
+        string value = ratingText;
+
+        if (showResultScore)
+            value += $"{scoreOpenText}{result.score.ToString(scoreFormat)}{scoreCloseText}";
+
+        return BuildLabel(showResultPrefix, resultLabelPrefix, value);
+    }
+
+    private string BuildLabel(bool showPrefix, string prefix, string value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+            value = "";
+
+        if (!showPrefix || string.IsNullOrWhiteSpace(prefix))
+            return value;
+
+        return $"{prefix}{labelSeparator}{value}";
+    }
+
+    private string GetToolDisplayName(ServiceActionPlanStep step)
+    {
+        if (step == null)
+            return emptyToolText;
+
+        if (string.IsNullOrWhiteSpace(step.productId))
+            return emptyToolText;
+
+        if (InventoryManager.Instance != null)
+        {
+            ProductData product = InventoryManager.Instance.GetProductDataById(step.productId);
+
+            if (product != null && !string.IsNullOrWhiteSpace(product.productName))
+                return product.productName;
+        }
+
+        return step.productId;
+    }
+
+    private string GetActionDisplayName(ServiceActionType actionType)
+    {
+        return actionType switch
+        {
+            ServiceActionType.Wash => washActionText,
+            ServiceActionType.Comb => combActionText,
+            ServiceActionType.Cut => cutActionText,
+            ServiceActionType.Razor => razorActionText,
+            ServiceActionType.Finish => finishActionText,
+            ServiceActionType.Define => defineActionText,
+            ServiceActionType.Beard => beardActionText,
+            ServiceActionType.Finalize => finalizeActionText,
+            _ => actionType.ToString()
+        };
+    }
+
+    private string GetRatingDisplayName(ServiceActionRating rating)
+    {
+        return rating switch
+        {
+            ServiceActionRating.Horrivel => horribleRatingText,
+            ServiceActionRating.Ruim => badRatingText,
+            ServiceActionRating.MaisOuMenos => mediumRatingText,
+            ServiceActionRating.Bom => goodRatingText,
+            ServiceActionRating.Otimo => greatRatingText,
+            ServiceActionRating.Perfeito => perfectRatingText,
+            _ => rating.ToString()
+        };
     }
 
     public void HideAfterDelay()

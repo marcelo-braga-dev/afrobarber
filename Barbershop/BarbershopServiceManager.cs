@@ -9,6 +9,13 @@ public class BarbershopServiceManager : MonoBehaviour
     [SerializeField] private ServicePlanningUI servicePlanningUI;
     [SerializeField] private bool openPlanningUIBeforeAdvancedExecution = true;
 
+    [Header("Condição para abrir planejamento")]
+    [SerializeField] private Transform playerTransform;
+    [SerializeField] private Transform planningInteractionPoint;
+    [SerializeField] private float planningInteractionDistance = 2.5f;
+    [SerializeField] private bool requirePlayerNearChairToOpenPlanning = true;
+    [SerializeField] private string playerTag = "Player";
+
     [Header("Pontos do atendimento")]
     [SerializeField] private Transform barberChairWalkPoint;
     [SerializeField] private Transform barberChairSitPoint;
@@ -40,6 +47,7 @@ public class BarbershopServiceManager : MonoBehaviour
     private ClientNPC currentClient;
     private Coroutine currentServiceRoutine;
     private bool currentServiceUsingAdvancedWorkflow;
+    private bool waitingForPlayerToOpenPlanning;
 
     public Transform BarberChairWalkPoint => barberChairWalkPoint;
     public Transform BarberChairSitPoint => barberChairSitPoint;
@@ -47,6 +55,7 @@ public class BarbershopServiceManager : MonoBehaviour
     public Transform ExitPoint => exitPoint;
     public ClientNPC CurrentClient => currentClient;
     public bool HasActiveService => currentClient != null;
+    public bool WaitingForPlayerToOpenPlanning => waitingForPlayerToOpenPlanning;
 
     private void Awake()
     {
@@ -66,6 +75,8 @@ public class BarbershopServiceManager : MonoBehaviour
 
         if (advancedWorkflow == null)
             advancedWorkflow = FindFirstObjectByType<AdvancedServiceWorkflowManager>();
+
+        TryFindPlayerTransform();
     }
 
     public bool HasClientInService()
@@ -125,6 +136,7 @@ public class BarbershopServiceManager : MonoBehaviour
 
         currentClient = client;
         currentServiceUsingAdvancedWorkflow = false;
+        waitingForPlayerToOpenPlanning = false;
 
         if (BarberQueueSystem.Instance != null)
             BarberQueueSystem.Instance.MarkClientAsBeingServed(client, true);
@@ -192,6 +204,17 @@ public class BarbershopServiceManager : MonoBehaviour
                 currentServiceRoutine = null;
                 yield break;
             }
+
+            if (CanWaitForPlayerToOpenPlanning(client))
+            {
+                waitingForPlayerToOpenPlanning = true;
+
+                if (enableDebugLogs)
+                    Debug.Log("[BarbershopServiceManager] Cliente sentado. Aguardando player se aproximar da cadeira para abrir planejamento.");
+
+                currentServiceRoutine = null;
+                yield break;
+            }
         }
 
         bool advancedStarted = TryStartAdvancedServiceFlow(client);
@@ -221,6 +244,147 @@ public class BarbershopServiceManager : MonoBehaviour
         }
 
         currentServiceRoutine = null;
+    }
+
+    private bool CanWaitForPlayerToOpenPlanning(ClientNPC client)
+    {
+        if (!useAdvancedServiceWorkflow)
+            return false;
+
+        if (!openPlanningUIBeforeAdvancedExecution)
+            return false;
+
+        if (client == null || client.RequestData == null)
+            return false;
+
+        if (client.CurrentState != ClientNPC.ClientState.InService)
+            return false;
+
+        if (advancedWorkflow == null)
+            advancedWorkflow = FindFirstObjectByType<AdvancedServiceWorkflowManager>();
+
+        if (advancedWorkflow == null || !advancedWorkflow.EnableAdvancedWorkflow)
+            return false;
+
+        if (servicePlanningUI == null)
+            servicePlanningUI = FindFirstObjectByType<ServicePlanningUI>(FindObjectsInactive.Include);
+
+        return servicePlanningUI != null;
+    }
+
+    public void TryOpenPlanningForCurrentClient()
+    {
+        if (currentClient == null)
+        {
+            Debug.LogWarning("[BarbershopServiceManager] Nenhum cliente atual para abrir planejamento.");
+            return;
+        }
+
+        bool opened = TryOpenServicePlanningUI(currentClient);
+
+        if (!opened)
+        {
+            Debug.LogWarning("[BarbershopServiceManager] Não foi possível abrir o planejamento. Verifique se o player está perto da cadeira e se o cliente está sentado.");
+        }
+    }
+
+    public bool CanOpenPlanningForCurrentClient()
+    {
+        if (currentClient == null)
+            return false;
+
+        if (currentClient.CurrentState != ClientNPC.ClientState.InService)
+            return false;
+
+        if (requirePlayerNearChairToOpenPlanning && !IsPlayerNearPlanningPoint())
+            return false;
+
+        return true;
+    }
+
+    private bool TryOpenServicePlanningUI(ClientNPC client)
+    {
+        if (!useAdvancedServiceWorkflow)
+            return false;
+
+        if (client == null || client.RequestData == null)
+            return false;
+
+        if (client.CurrentState != ClientNPC.ClientState.InService)
+        {
+            if (enableDebugLogs)
+                Debug.LogWarning("[BarbershopServiceManager] Planejamento bloqueado: cliente ainda não está sentado na cadeira.");
+
+            return false;
+        }
+
+        if (requirePlayerNearChairToOpenPlanning && !IsPlayerNearPlanningPoint())
+        {
+            if (enableDebugLogs)
+                Debug.LogWarning("[BarbershopServiceManager] Planejamento bloqueado: player está longe da cadeira de barbeiro.");
+
+            return false;
+        }
+
+        if (advancedWorkflow == null)
+            advancedWorkflow = FindFirstObjectByType<AdvancedServiceWorkflowManager>();
+
+        if (advancedWorkflow == null || !advancedWorkflow.EnableAdvancedWorkflow)
+            return false;
+
+        if (servicePlanningUI == null)
+            servicePlanningUI = FindFirstObjectByType<ServicePlanningUI>(FindObjectsInactive.Include);
+
+        if (servicePlanningUI == null)
+        {
+            Debug.LogWarning("[BarbershopServiceManager] ServicePlanningUI não encontrada.");
+            return false;
+        }
+
+        waitingForPlayerToOpenPlanning = false;
+
+        servicePlanningUI.Open(client, StartAdvancedServiceFromPlanningUI);
+        return true;
+    }
+
+    private bool IsPlayerNearPlanningPoint()
+    {
+        if (playerTransform == null)
+            TryFindPlayerTransform();
+
+        if (playerTransform == null)
+        {
+            Debug.LogWarning("[BarbershopServiceManager] PlayerTransform não encontrado. Configure manualmente ou use a tag Player.");
+            return false;
+        }
+
+        Transform referencePoint = planningInteractionPoint;
+
+        if (referencePoint == null)
+            referencePoint = barberChairSitPoint != null ? barberChairSitPoint : barberChairWalkPoint;
+
+        if (referencePoint == null)
+        {
+            Debug.LogWarning("[BarbershopServiceManager] Nenhum ponto de referência da cadeira foi configurado para o planejamento.");
+            return false;
+        }
+
+        float distance = Vector3.Distance(playerTransform.position, referencePoint.position);
+        return distance <= planningInteractionDistance;
+    }
+
+    private void TryFindPlayerTransform()
+    {
+        if (playerTransform != null)
+            return;
+
+        if (string.IsNullOrWhiteSpace(playerTag))
+            return;
+
+        GameObject playerObject = GameObject.FindGameObjectWithTag(playerTag);
+
+        if (playerObject != null)
+            playerTransform = playerObject.transform;
     }
 
     private bool TryStartAdvancedServiceFlow(ClientNPC client)
@@ -295,6 +459,69 @@ public class BarbershopServiceManager : MonoBehaviour
 
         currentServiceUsingAdvancedWorkflow = true;
         return true;
+    }
+
+    private void StartAdvancedServiceFromPlanningUI(ClientNPC client)
+    {
+        if (client == null)
+            return;
+
+        if (currentClient != client)
+        {
+            Debug.LogWarning("[BarbershopServiceManager] Tentou iniciar plano de um cliente que não é o atendimento atual.");
+            return;
+        }
+
+        bool executionStarted = TryExecutePreparedAdvancedPlan(client);
+
+        if (!executionStarted)
+        {
+            Debug.LogWarning("[BarbershopServiceManager] Plano manual não executou. Tentando fluxo automático avançado.");
+
+            bool automaticAdvancedStarted = TryStartAdvancedServiceFlow(client);
+
+            if (!automaticAdvancedStarted && fallbackToOldAutoServiceIfAdvancedFails)
+            {
+                float expectedDuration = GetExpectedServiceDuration(client.RequestData);
+                currentServiceRoutine = StartCoroutine(AutoCompleteServiceRoutine(client, expectedDuration));
+            }
+        }
+    }
+
+    private bool TryExecutePreparedAdvancedPlan(ClientNPC client)
+    {
+        if (advancedWorkflow == null)
+            advancedWorkflow = FindFirstObjectByType<AdvancedServiceWorkflowManager>();
+
+        if (advancedWorkflow == null)
+            return false;
+
+        if (!advancedWorkflow.HasValidPlan(client))
+        {
+            Debug.LogWarning("[BarbershopServiceManager] Nenhum plano manual válido encontrado para este cliente.");
+            return false;
+        }
+
+        bool executionStarted = advancedWorkflow.TryExecutePlan(client, result =>
+        {
+            if (enableDebugLogs)
+            {
+                string rating = result != null ? result.finalRating.ToString() : "NULL";
+                Debug.Log($"[Atendimento Avançado] Atendimento finalizado. Resultado: {rating}");
+            }
+
+            HandleAdvancedServiceFinished(client, result);
+        });
+
+        if (executionStarted)
+        {
+            currentServiceUsingAdvancedWorkflow = true;
+
+            if (enableDebugLogs)
+                Debug.Log("[BarbershopServiceManager] Atendimento avançado manual iniciado.");
+        }
+
+        return executionStarted;
     }
 
     private void HandleAdvancedServiceFinished(ClientNPC client, AdvancedServiceResult result)
@@ -405,6 +632,48 @@ public class BarbershopServiceManager : MonoBehaviour
         }
 
         SendCurrentClientToExitOrCashier();
+    }
+
+    public void DismissCurrentClientFromPlanning(ClientNPC client)
+    {
+        if (client == null)
+            return;
+
+        if (currentClient != client)
+        {
+            Debug.LogWarning("[BarbershopServiceManager] Tentou dispensar um cliente que não é o cliente atual.");
+            return;
+        }
+
+        if (currentServiceRoutine != null)
+        {
+            StopCoroutine(currentServiceRoutine);
+            currentServiceRoutine = null;
+        }
+
+        currentServiceUsingAdvancedWorkflow = false;
+        waitingForPlayerToOpenPlanning = false;
+
+        if (BarberQueueSystem.Instance != null)
+        {
+            BarberQueueSystem.Instance.RemoveClientFromQueue(client);
+        }
+
+        currentClient = null;
+
+        if (exitPoint != null)
+        {
+            client.LeaveShop(exitPoint);
+        }
+        else
+        {
+            client.ForceDespawn();
+        }
+
+        if (enableDebugLogs)
+        {
+            Debug.Log($"[BarbershopServiceManager] Cliente {client.name} foi dispensado pelo jogador.");
+        }
     }
 
     private PreparedServiceLoadout PrepareLoadoutForClient(ClientRequestData request)
@@ -528,6 +797,7 @@ public class BarbershopServiceManager : MonoBehaviour
             return;
 
         currentServiceUsingAdvancedWorkflow = false;
+        waitingForPlayerToOpenPlanning = false;
 
         if (cashierPoint != null)
         {
@@ -732,6 +1002,7 @@ public class BarbershopServiceManager : MonoBehaviour
         {
             currentClient = null;
             currentServiceUsingAdvancedWorkflow = false;
+            waitingForPlayerToOpenPlanning = false;
 
             if (enableDebugLogs)
                 Debug.Log($"[BarbershopServiceManager] Cliente {client.name} terminou no caixa.");
@@ -755,6 +1026,7 @@ public class BarbershopServiceManager : MonoBehaviour
         {
             currentClient = null;
             currentServiceUsingAdvancedWorkflow = false;
+            waitingForPlayerToOpenPlanning = false;
 
             if (currentServiceRoutine != null)
             {
@@ -827,95 +1099,5 @@ public class BarbershopServiceManager : MonoBehaviour
 
         Debug.LogWarning("[BarbershopServiceManager] Nenhum cliente em WaitingForService encontrado.");
         return false;
-    }
-
-    private bool TryOpenServicePlanningUI(ClientNPC client)
-    {
-        if (!useAdvancedServiceWorkflow)
-            return false;
-
-        if (client == null || client.RequestData == null)
-            return false;
-
-        if (advancedWorkflow == null)
-            advancedWorkflow = FindFirstObjectByType<AdvancedServiceWorkflowManager>();
-
-        if (advancedWorkflow == null || !advancedWorkflow.EnableAdvancedWorkflow)
-            return false;
-
-        if (servicePlanningUI == null)
-            servicePlanningUI = FindFirstObjectByType<ServicePlanningUI>(FindObjectsInactive.Include);
-
-        if (servicePlanningUI == null)
-        {
-            Debug.LogWarning("[BarbershopServiceManager] ServicePlanningUI não encontrada.");
-            return false;
-        }
-
-        servicePlanningUI.Open(client, StartAdvancedServiceFromPlanningUI);
-        return true;
-    }
-
-    private void StartAdvancedServiceFromPlanningUI(ClientNPC client)
-    {
-        if (client == null)
-            return;
-
-        if (currentClient != client)
-        {
-            Debug.LogWarning("[BarbershopServiceManager] Tentou iniciar plano de um cliente que não é o atendimento atual.");
-            return;
-        }
-
-        bool executionStarted = TryExecutePreparedAdvancedPlan(client);
-
-        if (!executionStarted)
-        {
-            Debug.LogWarning("[BarbershopServiceManager] Plano manual não executou. Tentando fluxo automático avançado.");
-
-            bool automaticAdvancedStarted = TryStartAdvancedServiceFlow(client);
-
-            if (!automaticAdvancedStarted && fallbackToOldAutoServiceIfAdvancedFails)
-            {
-                float expectedDuration = GetExpectedServiceDuration(client.RequestData);
-                currentServiceRoutine = StartCoroutine(AutoCompleteServiceRoutine(client, expectedDuration));
-            }
-        }
-    }
-
-    private bool TryExecutePreparedAdvancedPlan(ClientNPC client)
-    {
-        if (advancedWorkflow == null)
-            advancedWorkflow = FindFirstObjectByType<AdvancedServiceWorkflowManager>();
-
-        if (advancedWorkflow == null)
-            return false;
-
-        if (!advancedWorkflow.HasValidPlan(client))
-        {
-            Debug.LogWarning("[BarbershopServiceManager] Nenhum plano manual válido encontrado para este cliente.");
-            return false;
-        }
-
-        bool executionStarted = advancedWorkflow.TryExecutePlan(client, result =>
-        {
-            if (enableDebugLogs)
-            {
-                string rating = result != null ? result.finalRating.ToString() : "NULL";
-                Debug.Log($"[Atendimento Avançado] Atendimento finalizado. Resultado: {rating}");
-            }
-
-            HandleAdvancedServiceFinished(client, result);
-        });
-
-        if (executionStarted)
-        {
-            currentServiceUsingAdvancedWorkflow = true;
-
-            if (enableDebugLogs)
-                Debug.Log("[BarbershopServiceManager] Atendimento avançado manual iniciado.");
-        }
-
-        return executionStarted;
     }
 }

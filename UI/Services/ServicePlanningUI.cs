@@ -20,6 +20,17 @@ public class ServicePlanningUI : MonoBehaviour
     [SerializeField] private TMP_Text estimatedTimeText;
     [SerializeField] private TMP_Text warningText;
 
+    [Header("Cores do tempo estimado")]
+    [SerializeField] private Color estimatedTimeOkColor = Color.green;
+    [SerializeField] private Color estimatedTimeExceededColor = Color.red;
+    [SerializeField] private Color estimatedTimeNeutralColor = Color.white;
+
+    [Header("Mensagens")]
+    [SerializeField] private string missingToolWarning = "Existe uma ação sem ferramenta. Clique na imagem do item e selecione uma ferramenta compatível.";
+    [SerializeField] private string emptyPlanWarning = "Monte uma sequência de ações antes de iniciar.";
+    [SerializeField] private string missingFinalizeWarning = "Adicione a ação Finalizar para concluir o atendimento.";
+    [SerializeField] private string actionSelectedHint = "Clique sobre a imagem do item para trocar a ferramenta.";
+
     [Header("Grid de ações")]
     [SerializeField] private Transform actionsContent;
     [SerializeField] private ServicePlanningActionButton actionButtonPrefab;
@@ -33,6 +44,7 @@ public class ServicePlanningUI : MonoBehaviour
     [SerializeField] private Button clearButton;
     [SerializeField] private Button closeButton;
     [SerializeField] private Button autoPlanButton;
+    [SerializeField] private Button dismissButton;
 
     [Header("Ações disponíveis")]
     [SerializeField]
@@ -51,11 +63,13 @@ public class ServicePlanningUI : MonoBehaviour
     [Header("Configuração")]
     [SerializeField] private bool requireFinalizeStep = true;
     [SerializeField] private bool closeWhenStart = true;
+    [SerializeField] private bool blockPlayerMovementWhileOpen = true;
 
     private ClientNPC currentClient;
     private ServicePlanData currentPlan;
 
     private System.Action<ClientNPC> onStartRequested;
+    private bool isBlockingPlayerMovement;
 
     private void Awake()
     {
@@ -80,7 +94,35 @@ public class ServicePlanningUI : MonoBehaviour
         if (autoPlanButton != null)
             autoPlanButton.onClick.AddListener(CreateRecommendedPlan);
 
+        if (dismissButton != null)
+            dismissButton.onClick.AddListener(DismissClient);
+
         Hide();
+    }
+
+    private void OnDisable()
+    {
+        UnblockPlayerMovement();
+    }
+
+    private void OnDestroy()
+    {
+        UnblockPlayerMovement();
+
+        if (startButton != null)
+            startButton.onClick.RemoveListener(StartPlannedService);
+
+        if (clearButton != null)
+            clearButton.onClick.RemoveListener(ClearPlan);
+
+        if (closeButton != null)
+            closeButton.onClick.RemoveListener(Close);
+
+        if (autoPlanButton != null)
+            autoPlanButton.onClick.RemoveListener(CreateRecommendedPlan);
+
+        if (dismissButton != null)
+            dismissButton.onClick.RemoveListener(DismissClient);
     }
 
     public void Open(ClientNPC client, System.Action<ClientNPC> startCallback)
@@ -120,12 +162,37 @@ public class ServicePlanningUI : MonoBehaviour
             root.SetActive(true);
         else
             gameObject.SetActive(true);
+
+        BlockPlayerMovement();
     }
 
     private void Hide()
     {
         if (root != null)
             root.SetActive(false);
+
+        UnblockPlayerMovement();
+    }
+
+    private void BlockPlayerMovement()
+    {
+        if (!blockPlayerMovementWhileOpen)
+            return;
+
+        if (isBlockingPlayerMovement)
+            return;
+
+        PlayerMovementUIBlocker.Instance?.AddBlock();
+        isBlockingPlayerMovement = true;
+    }
+
+    private void UnblockPlayerMovement()
+    {
+        if (!isBlockingPlayerMovement)
+            return;
+
+        PlayerMovementUIBlocker.Instance?.RemoveBlock();
+        isBlockingPlayerMovement = false;
     }
 
     private void RefreshHeader()
@@ -133,16 +200,16 @@ public class ServicePlanningUI : MonoBehaviour
         ClientRequestData request = currentClient != null ? currentClient.RequestData : null;
 
         if (clientNameText != null)
-            clientNameText.text = currentClient != null ? currentClient.ClientDisplayName : "Cliente";
+            clientNameText.text = currentClient != null ? currentClient.ClientDisplayName : "";
 
         if (serviceNameText != null)
-            serviceNameText.text = request != null ? request.RequestName : "Serviço";
+            serviceNameText.text = request != null ? request.RequestName : "";
 
         if (serviceDescriptionText != null)
             serviceDescriptionText.text = request != null ? request.GetDescription() : "";
 
         if (idealTimeText != null)
-            idealTimeText.text = request != null ? $"Tempo ideal: {request.ServiceTime:0.#} min" : "Tempo ideal: -";
+            idealTimeText.text = request != null ? FormatMinutes(request.ServiceTime) : "";
 
         RefreshEstimatedTime();
     }
@@ -173,6 +240,9 @@ public class ServicePlanningUI : MonoBehaviour
         planningSystem.AddStep(currentPlan, actionType, bestTool);
 
         RefreshPlanList();
+
+        if (warningText != null && currentPlan != null && currentPlan.steps.Count > 0)
+            warningText.text = actionSelectedHint;
     }
 
     private void ClearPlan()
@@ -194,6 +264,9 @@ public class ServicePlanningUI : MonoBehaviour
         AddAction(ServiceActionType.Cut);
         AddAction(ServiceActionType.Finish);
         AddAction(ServiceActionType.Finalize);
+
+        if (warningText != null)
+            warningText.text = actionSelectedHint;
     }
 
     private void RefreshPlanList()
@@ -203,6 +276,7 @@ public class ServicePlanningUI : MonoBehaviour
         if (planContent == null || stepItemPrefab == null || currentPlan == null)
         {
             RefreshEstimatedTime();
+            ValidatePlan();
             return;
         }
 
@@ -219,6 +293,7 @@ public class ServicePlanningUI : MonoBehaviour
 
             item.Setup(
                 index,
+                currentPlan.steps.Count,
                 step,
                 compatibleTools,
                 OnToolChanged,
@@ -239,6 +314,9 @@ public class ServicePlanningUI : MonoBehaviour
 
         planningSystem.ReplaceTool(currentPlan, index, selectedTool);
         RefreshPlanList();
+
+        if (warningText != null)
+            warningText.text = actionSelectedHint;
     }
 
     private void RemoveStep(int index)
@@ -257,6 +335,9 @@ public class ServicePlanningUI : MonoBehaviour
 
         planningSystem.ReorderStep(currentPlan, index, index - 1);
         RefreshPlanList();
+
+        if (warningText != null && currentPlan != null && currentPlan.steps.Count > 0)
+            warningText.text = actionSelectedHint;
     }
 
     private void MoveStepDown(int index)
@@ -266,6 +347,9 @@ public class ServicePlanningUI : MonoBehaviour
 
         planningSystem.ReorderStep(currentPlan, index, index + 1);
         RefreshPlanList();
+
+        if (warningText != null && currentPlan != null && currentPlan.steps.Count > 0)
+            warningText.text = actionSelectedHint;
     }
 
     private void RefreshEstimatedTime()
@@ -273,29 +357,58 @@ public class ServicePlanningUI : MonoBehaviour
         float total = currentPlan != null ? currentPlan.GetEstimatedTotalMinutes() : 0f;
 
         if (estimatedTimeText != null)
-            estimatedTimeText.text = $"Tempo estimado: {total:0.#} min";
+        {
+            estimatedTimeText.text = FormatMinutes(total);
+            estimatedTimeText.color = GetEstimatedTimeColor(total);
+        }
+    }
+
+    private Color GetEstimatedTimeColor(float estimatedMinutes)
+    {
+        ClientRequestData request = currentClient != null ? currentClient.RequestData : null;
+
+        if (request == null)
+            return estimatedTimeNeutralColor;
+
+        float idealMinutes = request.ServiceTime;
+
+        if (estimatedMinutes <= 0f)
+            return estimatedTimeNeutralColor;
+
+        return estimatedMinutes <= idealMinutes
+            ? estimatedTimeOkColor
+            : estimatedTimeExceededColor;
     }
 
     private bool ValidatePlan()
     {
-        string warning = "";
+        string blockingWarning = GetBlockingWarning();
 
-        if (currentPlan == null || currentPlan.steps.Count == 0)
-        {
-            warning = "Monte uma sequência de ações antes de iniciar.";
-        }
-        else if (requireFinalizeStep && !HasAction(ServiceActionType.Finalize))
-        {
-            warning = "Adicione a ação Finalizar para concluir o atendimento.";
-        }
+        string messageToShow = string.IsNullOrWhiteSpace(blockingWarning)
+            ? actionSelectedHint
+            : blockingWarning;
 
         if (warningText != null)
-            warningText.text = warning;
+            warningText.text = messageToShow;
 
         if (startButton != null)
-            startButton.interactable = string.IsNullOrWhiteSpace(warning);
+            startButton.interactable = string.IsNullOrWhiteSpace(blockingWarning);
 
-        return string.IsNullOrWhiteSpace(warning);
+        return string.IsNullOrWhiteSpace(blockingWarning);
+    }
+
+    private string GetBlockingWarning()
+    {
+        if (currentPlan == null || currentPlan.steps == null || currentPlan.steps.Count == 0)
+            return emptyPlanWarning;
+
+        if (requireFinalizeStep && !HasAction(ServiceActionType.Finalize))
+            return missingFinalizeWarning;
+
+        if (HasAnyStepWithoutValidTool())
+            return missingToolWarning;
+
+        return "";
     }
 
     private bool HasAction(ServiceActionType actionType)
@@ -328,6 +441,11 @@ public class ServicePlanningUI : MonoBehaviour
         onStartRequested?.Invoke(currentClient);
     }
 
+    private string FormatMinutes(float value)
+    {
+        return Mathf.RoundToInt(value).ToString();
+    }
+
     private void ClearChildren(Transform parent)
     {
         if (parent == null)
@@ -335,5 +453,71 @@ public class ServicePlanningUI : MonoBehaviour
 
         for (int i = parent.childCount - 1; i >= 0; i--)
             Destroy(parent.GetChild(i).gameObject);
+    }
+
+    private bool HasAnyStepWithoutValidTool()
+    {
+        if (currentPlan == null || currentPlan.steps == null)
+            return true;
+
+        foreach (ServiceActionPlanStep step in currentPlan.steps)
+        {
+            if (!HasValidToolForStep(step))
+                return true;
+        }
+
+        return false;
+    }
+
+    private bool HasValidToolForStep(ServiceActionPlanStep step)
+    {
+        if (step == null)
+            return false;
+
+        if (string.IsNullOrWhiteSpace(step.productUniqueId))
+            return false;
+
+        if (InventoryManager.Instance == null)
+            return false;
+
+        ProductInventoryState item = InventoryManager.Instance.GetItemByUniqueId(step.productUniqueId);
+
+        if (item == null)
+            return false;
+
+        ProductData product = InventoryManager.Instance.GetProductDataById(item.productId);
+
+        if (product == null)
+            return false;
+
+        if (!item.IsUsable(product))
+            return false;
+
+        if (!ServiceToolCompatibility.IsCompatible(step.actionType, product.category))
+            return false;
+
+        return true;
+    }
+
+    private void DismissClient()
+    {
+        if (currentClient == null)
+        {
+            Close();
+            return;
+        }
+
+        BarbershopServiceManager manager = BarbershopServiceManager.Instance;
+
+        if (manager != null)
+        {
+            manager.DismissCurrentClientFromPlanning(currentClient);
+        }
+        else
+        {
+            Debug.LogWarning("[ServicePlanningUI] BarbershopServiceManager.Instance não encontrado. Não foi possível dispensar o cliente.");
+        }
+
+        Close();
     }
 }

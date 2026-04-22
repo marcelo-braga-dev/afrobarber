@@ -24,6 +24,7 @@ public class ServicePlanningStepItemUI : MonoBehaviour
     [SerializeField] private Button downButton;
 
     private int index;
+    private int totalSteps;
     private ServiceActionPlanStep step;
     private List<ProductInventoryState> compatibleTools = new List<ProductInventoryState>();
 
@@ -41,7 +42,30 @@ public class ServicePlanningStepItemUI : MonoBehaviour
         Action<int> moveUpCallback,
         Action<int> moveDownCallback)
     {
+        Setup(
+            index,
+            0,
+            step,
+            compatibleTools,
+            toolChangedCallback,
+            removeCallback,
+            moveUpCallback,
+            moveDownCallback
+        );
+    }
+
+    public void Setup(
+        int index,
+        int totalSteps,
+        ServiceActionPlanStep step,
+        List<ProductInventoryState> compatibleTools,
+        Action<int, ProductInventoryState> toolChangedCallback,
+        Action<int> removeCallback,
+        Action<int> moveUpCallback,
+        Action<int> moveDownCallback)
+    {
         this.index = index;
+        this.totalSteps = totalSteps;
         this.step = step;
         this.compatibleTools = compatibleTools ?? new List<ProductInventoryState>();
 
@@ -65,7 +89,7 @@ public class ServicePlanningStepItemUI : MonoBehaviour
             actionText.text = GetActionDisplayName(step.actionType);
 
         if (durationText != null)
-            durationText.text = $"{step.estimatedMinutes:0.#} min";
+            durationText.text = $"+{Mathf.RoundToInt(step.estimatedMinutes).ToString()} min";
 
         RefreshSelectedToolVisual();
         SetupButtons();
@@ -170,6 +194,9 @@ public class ServicePlanningStepItemUI : MonoBehaviour
 
     private void SetupButtons()
     {
+        bool canMoveUp = index > 0;
+        bool canMoveDown = totalSteps <= 0 || index < totalSteps - 1;
+
         if (removeButton != null)
         {
             removeButton.onClick.RemoveAllListeners();
@@ -178,15 +205,20 @@ public class ServicePlanningStepItemUI : MonoBehaviour
 
         if (upButton != null)
         {
+            upButton.gameObject.SetActive(canMoveUp);
             upButton.onClick.RemoveAllListeners();
-            upButton.onClick.AddListener(() => onMoveUp?.Invoke(index));
-            upButton.interactable = index > 0;
+
+            if (canMoveUp)
+                upButton.onClick.AddListener(() => onMoveUp?.Invoke(index));
         }
 
         if (downButton != null)
         {
+            downButton.gameObject.SetActive(canMoveDown);
             downButton.onClick.RemoveAllListeners();
-            downButton.onClick.AddListener(() => onMoveDown?.Invoke(index));
+
+            if (canMoveDown)
+                downButton.onClick.AddListener(() => onMoveDown?.Invoke(index));
         }
     }
 
