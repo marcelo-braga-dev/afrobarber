@@ -18,7 +18,7 @@ public class DialogueGameplayActionRouter : MonoBehaviour
         TrySubscribe();
 
         if (serviceManager == null)
-            serviceManager = FindObjectOfType<BarbershopServiceManager>();
+            serviceManager = FindFirstObjectByType<BarbershopServiceManager>();
     }
 
     private void OnDisable()
@@ -115,14 +115,16 @@ public class DialogueGameplayActionRouter : MonoBehaviour
                 break;
         }
 
-        NPCConversationBrain brain = focusedConversationBrain != null ? focusedConversationBrain : FindObjectOfType<NPCConversationBrain>();
+        NPCConversationBrain brain = focusedConversationBrain != null
+            ? focusedConversationBrain
+            : FindFirstObjectByType<NPCConversationBrain>();
         brain?.ProcessPlayerOption(option);
     }
 
     private void CallNextClient()
     {
         if (serviceManager == null)
-            serviceManager = FindObjectOfType<BarbershopServiceManager>();
+            serviceManager = FindFirstObjectByType<BarbershopServiceManager>();
 
         if (serviceManager == null)
             return;
