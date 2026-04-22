@@ -138,5 +138,129 @@ public class ClientEvaluationSystem : MonoBehaviour
         return Mathf.Clamp(weightedSum / totalWeight, 0f, 5f);
     }
 
-    // resto do script permanece igual
+    private float EvaluateWaitingScore(float waitingMinutes, float waitingLimitMinutes)
+    {
+        waitingMinutes = Mathf.Max(0f, waitingMinutes);
+        waitingLimitMinutes = Mathf.Max(1f, waitingLimitMinutes);
+
+        if (waitingMinutes <= 0f)
+            return 5f;
+
+        float normalized = Mathf.Clamp01(waitingMinutes / waitingLimitMinutes);
+        return Mathf.Clamp(5f - (normalized * 5f), 0f, 5f);
+    }
+
+    private float EvaluateServiceTimeScore(float actualDurationMinutes, float serviceLimitMinutes)
+    {
+        actualDurationMinutes = Mathf.Max(0f, actualDurationMinutes);
+        serviceLimitMinutes = Mathf.Max(1f, serviceLimitMinutes);
+
+        float normalized = Mathf.Clamp01(actualDurationMinutes / serviceLimitMinutes);
+        return Mathf.Clamp(5f - (normalized * 5f), 0f, 5f);
+    }
+
+    private float EvaluateBarberConditionScore(float barberEnergyAtStart, float barberEnergyAtEnd)
+    {
+        float normalizedStart = Mathf.Clamp01(barberEnergyAtStart);
+        float normalizedEnd = Mathf.Clamp01(barberEnergyAtEnd);
+        float averageEnergy = (normalizedStart + normalizedEnd) * 0.5f;
+        return Mathf.Clamp(averageEnergy * 5f, 0f, 5f);
+    }
+
+    private float EvaluateEquipmentScore(float equipmentQuality)
+    {
+        return Mathf.Clamp(equipmentQuality, 0f, 5f);
+    }
+
+    private float ApplyRandomMargin(float value)
+    {
+        if (randomMarginPercent <= 0f)
+            return Mathf.Clamp(value, 0f, 5f);
+
+        float margin = Mathf.Abs(value) * randomMarginPercent;
+        if (margin < 0.05f)
+            margin = 0.05f;
+
+        float randomized = value + Random.Range(-margin, margin);
+        return Mathf.Clamp(randomized, 0f, 5f);
+    }
+
+    private float EnsureDifferentFromLast(float score)
+    {
+        if (lastFinalScore < 0f || !Mathf.Approximately(score, lastFinalScore))
+            return score;
+
+        float adjusted = score + Random.Range(-0.2f, 0.2f);
+        adjusted = Mathf.Clamp(adjusted, 0f, 5f);
+        return Mathf.Round(adjusted * 10f) / 10f;
+    }
+
+    private string GetWaitingComment(float score) => GetCommentByScore(
+        score,
+        "Demora excessiva para começar o atendimento.",
+        "Tempo de espera um pouco alto.",
+        "Espera aceitável.",
+        "Atendimento começou rapidamente."
+    );
+
+    private string GetQualityComment(float score) => GetCommentByScore(
+        score,
+        "O resultado final ficou abaixo do esperado.",
+        "Qualidade razoável, mas pode melhorar.",
+        "Bom trabalho no serviço realizado.",
+        "Corte excelente, superou as expectativas."
+    );
+
+    private string GetServiceTimeComment(float score) => GetCommentByScore(
+        score,
+        "Serviço demorou mais do que o aceitável.",
+        "Tempo de execução poderia ser menor.",
+        "Tempo de atendimento adequado.",
+        "Serviço ágil e bem executado."
+    );
+
+    private string GetBarberConditionComment(float score) => GetCommentByScore(
+        score,
+        "O barbeiro parecia muito cansado durante o serviço.",
+        "Percebi um pouco de desgaste no atendimento.",
+        "Atendimento estável, sem grandes oscilações.",
+        "Barbeiro muito disposto e focado."
+    );
+
+    private string GetEquipmentComment(float score) => GetCommentByScore(
+        score,
+        "Ferramentas e produtos impactaram negativamente a experiência.",
+        "Equipamentos razoáveis, mas com espaço para melhoria.",
+        "Equipamentos em boas condições.",
+        "Ferramentas e produtos de ótima qualidade."
+    );
+
+    private string GetComfortComment(float score) => GetCommentByScore(
+        score,
+        "Ambiente desconfortável durante o atendimento.",
+        "Conforto mediano no espaço.",
+        "Ambiente confortável.",
+        "Ambiente muito agradável e acolhedor."
+    );
+
+    private string GetFinalComment(float finalScore) => GetCommentByScore(
+        finalScore,
+        "Experiência ruim. Precisa melhorar bastante.",
+        "Experiência razoável, com pontos importantes para ajustar.",
+        "Boa experiência geral.",
+        "Excelente experiência. Voltarei com certeza."
+    );
+
+    private string GetCommentByScore(
+        float score,
+        string lowComment,
+        string mediumComment,
+        string goodComment,
+        string greatComment)
+    {
+        if (score < 2f) return lowComment;
+        if (score < 3f) return mediumComment;
+        if (score < 4.5f) return goodComment;
+        return greatComment;
+    }
 }

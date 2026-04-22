@@ -1098,7 +1098,7 @@ public class BarbershopServiceManager : MonoBehaviour
 
     public bool CallNextClientFromQueue()
     {
-        ClientNPC[] clients = FindObjectsOfType<ClientNPC>();
+        ClientNPC[] clients = FindObjectsByType<ClientNPC>(FindObjectsSortMode.None);
 
         foreach (ClientNPC client in clients)
         {
