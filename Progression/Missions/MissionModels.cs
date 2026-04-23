@@ -21,7 +21,8 @@ public enum MissionScheduleType
 public enum MissionRewardType
 {
     Money,
-    Item
+    Item,
+    XP
 }
 
 [Serializable]
@@ -29,6 +30,7 @@ public class MissionRewardDefinition
 {
     public MissionRewardType rewardType = MissionRewardType.Money;
     [Min(0)] public int moneyAmount;
+    [Min(0)] public int xpAmount;
     public ProductData itemReward;
     [Min(1)] public int itemAmount = 1;
 }
@@ -85,6 +87,10 @@ public class MissionProgressState
     public string missionId;
     public int claimedTierCount;
     public long periodAnchorTicks;
+    public int baselineClientsServed;
+    public int baselineRevenue;
+    public float baselineServiceMinutes;
+    public int baselineSpecificCutCompleted;
 }
 
 [Serializable]

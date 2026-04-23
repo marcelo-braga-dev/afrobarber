@@ -38,11 +38,17 @@ public class MissionSystem : MonoBehaviour
         }
 
         Instance = this;
+
+        if (OnMissionDataChanged == null)
+            OnMissionDataChanged = new UnityEvent();
+
         DontDestroyOnLoad(gameObject);
         Load();
         EnsureMissionIds();
         RebuildCutCounters();
-        ValidatePeriodResets();
+
+        if (ValidatePeriodResets())
+            Save();
     }
 
     public void RegisterServiceCompleted(ClientRequestData request, int earnedMoney, float serviceMinutes)
@@ -141,7 +147,8 @@ public class MissionSystem : MonoBehaviour
                 if (string.IsNullOrWhiteSpace(mission.specificCutId))
                     return 0;
 
-                return cutCounters.TryGetValue(mission.specificCutId, out int cutCount) ? cutCount : 0;
+                int cutCount = 0;
+                return cutCounters.TryGetValue(mission.specificCutId, out cutCount) ? cutCount : 0;
 
             default:
                 return 0;
@@ -216,7 +223,10 @@ public class MissionSystem : MonoBehaviour
 
         if (mission.scheduleType == MissionScheduleType.EventWindow || mission.isTemporary)
         {
-            if (mission.TryGetWindow(out DateTime startsAt, out DateTime endsAt))
+            DateTime startsAt;
+            DateTime endsAt;
+
+            if (mission.TryGetWindow(out startsAt, out endsAt))
             {
                 if (now < startsAt || now > endsAt)
                     return false;
@@ -310,7 +320,8 @@ public class MissionSystem : MonoBehaviour
             mission.missionId = missionId;
         }
 
-        if (!missionStateById.TryGetValue(missionId, out MissionProgressState state))
+        MissionProgressState state;
+        if (!missionStateById.TryGetValue(missionId, out state))
         {
             state = new MissionProgressState
             {
@@ -345,9 +356,10 @@ public class MissionSystem : MonoBehaviour
         Save();
     }
 
-    private void ValidatePeriodResets()
+    private bool ValidatePeriodResets()
     {
         DateTime nowUtc = DateTime.UtcNow;
+        bool hasReset = false;
 
         for (int i = 0; i < missions.Count; i++)
         {
@@ -373,7 +385,10 @@ public class MissionSystem : MonoBehaviour
 
             state.claimedTierCount = 0;
             state.periodAnchorTicks = nowUtc.Ticks;
+            hasReset = true;
         }
+
+        return hasReset;
     }
 
     private void TrimHistory()
