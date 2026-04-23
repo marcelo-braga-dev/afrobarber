@@ -11,6 +11,7 @@ public class ClientEvaluationSystem : MonoBehaviour
     [SerializeField] private float barberConditionWeight = 1f;
     [SerializeField] private float equipmentWeight = 1f;
     [SerializeField] private float comfortWeight = 0.5f;
+    [SerializeField] private float aestheticWeight = 0.5f;
     [SerializeField] private float pricingWeight = 1.5f;
 
     [Header("Regras")]
@@ -40,6 +41,12 @@ public class ClientEvaluationSystem : MonoBehaviour
 
     public ServiceEvaluationResult EvaluateService(ServiceSessionData data)
     {
+        if (data == null)
+        {
+            Debug.LogWarning("[ClientEvaluationSystem] ServiceSessionData nulo.");
+            return null;
+        }
+
         ServiceEvaluationResult result = new ServiceEvaluationResult();
 
         float waitingLimit = Mathf.Max(1f, defaultMaxWaitingMinutes);
@@ -58,8 +65,8 @@ public class ClientEvaluationSystem : MonoBehaviour
         result.barberConditionScore = EvaluateBarberConditionScore(data.barberEnergyAtStart, data.barberEnergyAtEnd);
         result.equipmentScore = EvaluateEquipmentScore(data.GetAverageToolQuality());
         result.comfortScore = Mathf.Clamp(data.environmentComfortScore, 0f, 5f);
-
-        float pricingScore = Mathf.Clamp(data.pricingSatisfactionScore * 5f, 0f, 5f);
+        result.aestheticScore = Mathf.Clamp(data.environmentAestheticScore, 0f, 5f);
+        result.pricingScore = Mathf.Clamp(data.pricingSatisfactionScore * 5f, 0f, 5f);
 
         if (randomizeIndividualFactors)
         {
@@ -69,8 +76,28 @@ public class ClientEvaluationSystem : MonoBehaviour
             result.barberConditionScore = ApplyRandomMargin(result.barberConditionScore);
             result.equipmentScore = ApplyRandomMargin(result.equipmentScore);
             result.comfortScore = ApplyRandomMargin(result.comfortScore);
-            pricingScore = ApplyRandomMargin(pricingScore);
+            result.aestheticScore = ApplyRandomMargin(result.aestheticScore);
+            result.pricingScore = ApplyRandomMargin(result.pricingScore);
         }
+
+        result.attendanceScore = CalculateWeightedAverage(
+            result.serviceQualityScore, 2f,
+            result.serviceTimeScore, 1.5f,
+            result.barberConditionScore, 1f
+        );
+
+        result.structureScore = CalculateWeightedAverage(
+            result.equipmentScore, 1.2f,
+            result.comfortScore, 1f,
+            result.aestheticScore, 1f
+        );
+
+        result.experienceScore = CalculateWeightedAverage(
+            result.waitingScore, 1f,
+            result.comfortScore, 1f,
+            result.aestheticScore, 0.8f,
+            result.pricingScore, 1f
+        );
 
         result.waitingComment = GetWaitingComment(result.waitingScore);
         result.qualityComment = GetQualityComment(result.serviceQualityScore);
@@ -78,6 +105,12 @@ public class ClientEvaluationSystem : MonoBehaviour
         result.barberConditionComment = GetBarberConditionComment(result.barberConditionScore);
         result.equipmentComment = GetEquipmentComment(result.equipmentScore);
         result.comfortComment = GetComfortComment(result.comfortScore);
+        result.aestheticComment = GetAestheticComment(result.aestheticScore);
+        result.pricingComment = GetPricingComment(result.pricingScore);
+
+        result.attendanceComment = GetAttendanceComment(result.attendanceScore);
+        result.structureComment = GetStructureComment(result.structureScore);
+        result.experienceComment = GetExperienceComment(result.experienceScore);
 
         float baseFinalScore = CalculateWeightedAverage(
             result.waitingScore, waitingWeight,
@@ -86,7 +119,8 @@ public class ClientEvaluationSystem : MonoBehaviour
             result.barberConditionScore, barberConditionWeight,
             result.equipmentScore, equipmentWeight,
             result.comfortScore, comfortWeight,
-            pricingScore, pricingWeight
+            result.aestheticScore, aestheticWeight,
+            result.pricingScore, pricingWeight
         );
 
         if (randomizeFinalScore)
@@ -103,13 +137,56 @@ public class ClientEvaluationSystem : MonoBehaviour
 
         lastFinalScore = result.finalScore;
 
+        if (BarbershopRatingManager.Instance != null)
+            BarbershopRatingManager.Instance.AddReview(result);
+
         Debug.Log(
             $"[ClientEvaluationSystem] Nota final: {result.finalScore} | " +
-            $"Espera={result.waitingScore}, Qualidade={result.serviceQualityScore}, Tempo={result.serviceTimeScore}, " +
-            $"Barbeiro={result.barberConditionScore}, Equipamentos={result.equipmentScore}, Conforto={result.comfortScore}, Preço={pricingScore}"
+            $"Atendimento={result.attendanceScore:0.0}, Estrutura={result.structureScore:0.0}, Experiência={result.experienceScore:0.0} | " +
+            $"Espera={result.waitingScore:0.0}, Qualidade={result.serviceQualityScore:0.0}, Tempo={result.serviceTimeScore:0.0}, " +
+            $"Barbeiro={result.barberConditionScore:0.0}, Equipamentos={result.equipmentScore:0.0}, " +
+            $"Conforto={result.comfortScore:0.0}, Estética={result.aestheticScore:0.0}, Preço={result.pricingScore:0.0}"
         );
 
         return result;
+    }
+
+    private float CalculateWeightedAverage(
+        float a, float weightA,
+        float b, float weightB,
+        float c, float weightC)
+    {
+        float totalWeight = weightA + weightB + weightC;
+
+        if (totalWeight <= 0f)
+            return 0f;
+
+        float weightedSum =
+            (a * weightA) +
+            (b * weightB) +
+            (c * weightC);
+
+        return Mathf.Clamp(weightedSum / totalWeight, 0f, 5f);
+    }
+
+    private float CalculateWeightedAverage(
+        float a, float weightA,
+        float b, float weightB,
+        float c, float weightC,
+        float d, float weightD)
+    {
+        float totalWeight = weightA + weightB + weightC + weightD;
+
+        if (totalWeight <= 0f)
+            return 0f;
+
+        float weightedSum =
+            (a * weightA) +
+            (b * weightB) +
+            (c * weightC) +
+            (d * weightD);
+
+        return Mathf.Clamp(weightedSum / totalWeight, 0f, 5f);
     }
 
     private float CalculateWeightedAverage(
@@ -119,9 +196,10 @@ public class ClientEvaluationSystem : MonoBehaviour
         float d, float weightD,
         float e, float weightE,
         float f, float weightF,
-        float g, float weightG)
+        float g, float weightG,
+        float h, float weightH)
     {
-        float totalWeight = weightA + weightB + weightC + weightD + weightE + weightF + weightG;
+        float totalWeight = weightA + weightB + weightC + weightD + weightE + weightF + weightG + weightH;
 
         if (totalWeight <= 0f)
             return 0f;
@@ -133,7 +211,8 @@ public class ClientEvaluationSystem : MonoBehaviour
             (d * weightD) +
             (e * weightE) +
             (f * weightF) +
-            (g * weightG);
+            (g * weightG) +
+            (h * weightH);
 
         return Mathf.Clamp(weightedSum / totalWeight, 0f, 5f);
     }
@@ -161,9 +240,10 @@ public class ClientEvaluationSystem : MonoBehaviour
 
     private float EvaluateBarberConditionScore(float barberEnergyAtStart, float barberEnergyAtEnd)
     {
-        float normalizedStart = Mathf.Clamp01(barberEnergyAtStart);
-        float normalizedEnd = Mathf.Clamp01(barberEnergyAtEnd);
-        float averageEnergy = (normalizedStart + normalizedEnd) * 0.5f;
+        float start = Mathf.Clamp01(barberEnergyAtStart > 1f ? barberEnergyAtStart / 100f : barberEnergyAtStart);
+        float end = Mathf.Clamp01(barberEnergyAtEnd > 1f ? barberEnergyAtEnd / 100f : barberEnergyAtEnd);
+
+        float averageEnergy = (start + end) * 0.5f;
         return Mathf.Clamp(averageEnergy * 5f, 0f, 5f);
     }
 
@@ -241,6 +321,46 @@ public class ClientEvaluationSystem : MonoBehaviour
         "Conforto mediano no espaço.",
         "Ambiente confortável.",
         "Ambiente muito agradável e acolhedor."
+    );
+
+    private string GetAestheticComment(float score) => GetCommentByScore(
+        score,
+        "O visual da barbearia prejudicou a experiência.",
+        "Ambiente visualmente simples, pode melhorar.",
+        "Barbearia bonita e agradável.",
+        "Visual marcante, estiloso e muito atrativo."
+    );
+
+    private string GetPricingComment(float score) => GetCommentByScore(
+        score,
+        "O preço cobrado pareceu injusto.",
+        "O preço ficou um pouco acima do esperado.",
+        "Preço aceitável pelo serviço.",
+        "Preço justo pela experiência entregue."
+    );
+
+    private string GetAttendanceComment(float score) => GetCommentByScore(
+        score,
+        "Atendimento precisa melhorar bastante.",
+        "Atendimento razoável, com pontos de atenção.",
+        "Bom atendimento.",
+        "Atendimento excelente."
+    );
+
+    private string GetStructureComment(float score) => GetCommentByScore(
+        score,
+        "Estrutura da barbearia prejudicou a experiência.",
+        "Estrutura simples, pode melhorar.",
+        "Boa estrutura.",
+        "Estrutura excelente, confortável e estilosa."
+    );
+
+    private string GetExperienceComment(float score) => GetCommentByScore(
+        score,
+        "Experiência geral desconfortável.",
+        "Experiência razoável.",
+        "Boa experiência geral.",
+        "Experiência muito agradável e memorável."
     );
 
     private string GetFinalComment(float finalScore) => GetCommentByScore(

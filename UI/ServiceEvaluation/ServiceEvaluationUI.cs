@@ -13,13 +13,32 @@ public class ServiceEvaluationUI : MonoBehaviour
     [SerializeField] private TMP_Text finalCommentText;
     [SerializeField] private Slider finalScoreSlider;
 
-    [Header("Notas")]
+    [Header("Notas antigas")]
     [SerializeField] private Slider waitingScoreSlider;
     [SerializeField] private Slider qualityScoreSlider;
     [SerializeField] private Slider timeScoreSlider;
     [SerializeField] private Slider barberConditionScoreSlider;
     [SerializeField] private Slider equipmentScoreSlider;
     [SerializeField] private Slider comfortScoreSlider;
+
+    [Header("Notas novas opcionais")]
+    [SerializeField] private Slider aestheticScoreSlider;
+    [SerializeField] private Slider pricingScoreSlider;
+
+    [Header("Notas agrupadas opcionais")]
+    [SerializeField] private TMP_Text attendanceScoreText;
+    [SerializeField] private Slider attendanceScoreSlider;
+
+    [SerializeField] private TMP_Text structureScoreText;
+    [SerializeField] private Slider structureScoreSlider;
+
+    [SerializeField] private TMP_Text experienceScoreText;
+    [SerializeField] private Slider experienceScoreSlider;
+
+    [Header("Comentários agrupados opcionais")]
+    [SerializeField] private TMP_Text attendanceCommentText;
+    [SerializeField] private TMP_Text structureCommentText;
+    [SerializeField] private TMP_Text experienceCommentText;
 
     [Header("Configuração")]
     [SerializeField] private bool enableDebugLogs = true;
@@ -35,6 +54,11 @@ public class ServiceEvaluationUI : MonoBehaviour
         ConfigureSlider(barberConditionScoreSlider);
         ConfigureSlider(equipmentScoreSlider);
         ConfigureSlider(comfortScoreSlider);
+        ConfigureSlider(aestheticScoreSlider);
+        ConfigureSlider(pricingScoreSlider);
+        ConfigureSlider(attendanceScoreSlider);
+        ConfigureSlider(structureScoreSlider);
+        ConfigureSlider(experienceScoreSlider);
 
         if (panel != null)
             panel.SetActive(false);
@@ -58,6 +82,20 @@ public class ServiceEvaluationUI : MonoBehaviour
         SetSlider(barberConditionScoreSlider, result.barberConditionScore);
         SetSlider(equipmentScoreSlider, result.equipmentScore);
         SetSlider(comfortScoreSlider, result.comfortScore);
+        SetSlider(aestheticScoreSlider, result.aestheticScore);
+        SetSlider(pricingScoreSlider, result.pricingScore);
+
+        SetText(attendanceScoreText, $"{Format(result.attendanceScore)}/5");
+        SetText(structureScoreText, $"{Format(result.structureScore)}/5");
+        SetText(experienceScoreText, $"{Format(result.experienceScore)}/5");
+
+        SetSlider(attendanceScoreSlider, result.attendanceScore);
+        SetSlider(structureScoreSlider, result.structureScore);
+        SetSlider(experienceScoreSlider, result.experienceScore);
+
+        SetText(attendanceCommentText, result.attendanceComment);
+        SetText(structureCommentText, result.structureComment);
+        SetText(experienceCommentText, result.experienceComment);
     }
 
     public void ShowAdvanced(AdvancedServiceResult result)
@@ -80,6 +118,12 @@ public class ServiceEvaluationUI : MonoBehaviour
         float barberConditionScore = finalScore;
         float equipmentScore = finalScore;
         float comfortScore = 4f;
+        float aestheticScore = 4f;
+        float pricingScore = 4f;
+
+        float attendanceScore = CalculateAverage(qualityScore, timeScore, barberConditionScore);
+        float structureScore = CalculateAverage(equipmentScore, comfortScore, aestheticScore);
+        float experienceScore = CalculateAverage(waitingScore, comfortScore, aestheticScore, pricingScore);
 
         SetText(finalScoreText, $"{Format(finalScore)}/5");
         SetText(finalCommentText, BuildAdvancedFinalComment(result));
@@ -91,6 +135,20 @@ public class ServiceEvaluationUI : MonoBehaviour
         SetSlider(barberConditionScoreSlider, barberConditionScore);
         SetSlider(equipmentScoreSlider, equipmentScore);
         SetSlider(comfortScoreSlider, comfortScore);
+        SetSlider(aestheticScoreSlider, aestheticScore);
+        SetSlider(pricingScoreSlider, pricingScore);
+
+        SetText(attendanceScoreText, $"{Format(attendanceScore)}/5");
+        SetText(structureScoreText, $"{Format(structureScore)}/5");
+        SetText(experienceScoreText, $"{Format(experienceScore)}/5");
+
+        SetSlider(attendanceScoreSlider, attendanceScore);
+        SetSlider(structureScoreSlider, structureScore);
+        SetSlider(experienceScoreSlider, experienceScore);
+
+        SetText(attendanceCommentText, "Resumo do atendimento avançado.");
+        SetText(structureCommentText, "Estrutura considerada adequada para o serviço.");
+        SetText(experienceCommentText, "Experiência calculada pelo fluxo avançado.");
 
         if (enableDebugLogs)
         {
@@ -172,6 +230,19 @@ public class ServiceEvaluationUI : MonoBehaviour
             ServiceFinalRating.Perfeito => "perfeito",
             _ => "indefinida"
         };
+    }
+
+    private float CalculateAverage(params float[] values)
+    {
+        if (values == null || values.Length == 0)
+            return 0f;
+
+        float total = 0f;
+
+        foreach (float value in values)
+            total += Mathf.Clamp(value, 0f, 5f);
+
+        return Mathf.Clamp(total / values.Length, 0f, 5f);
     }
 
     private void ConfigureSlider(Slider slider)

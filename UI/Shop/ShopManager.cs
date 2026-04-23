@@ -6,47 +6,34 @@ public class ShopManager : MonoBehaviour
     [Header("Bancos por Categoria")]
     [SerializeField] private List<CategoryDatabaseEntry> categoryDatabases = new List<CategoryDatabaseEntry>();
 
-    [Header("UI Produtos")]
-    [SerializeField] private Transform contentParent;
-    [SerializeField] private ShopItemUI shopItemPrefab;
+    [Header("UI")]
+    [SerializeField] private Transform productListContent;
+    [SerializeField] private ShopItemUI productItemPrefab;
 
-    [Header("Botões de Categoria")]
+    [Header("Botões de categoria")]
     [SerializeField] private List<CategoryButtonUI> categoryButtons = new List<CategoryButtonUI>();
 
-    [Header("Categoria Inicial")]
-    [SerializeField] private ProductCategory initialCategory = ProductCategory.MaquinaDeCorte;
-
-    private readonly List<ShopItemUI> instantiatedItems = new List<ShopItemUI>();
     private ProductCategory currentCategory;
+    private bool hasSelectedCategory;
 
     private void Start()
     {
-        if (contentParent == null)
-        {
-            Debug.LogError("ShopManager: contentParent não foi atribuído.", this);
-            return;
-        }
-
-        if (shopItemPrefab == null)
-        {
-            Debug.LogError("ShopManager: shopItemPrefab não foi atribuído.", this);
-            return;
-        }
-
         SetupCategoryButtons();
 
-        currentCategory = initialCategory;
-        GenerateShopByCategory(currentCategory);
-        UpdateCategoryButtonsVisual();
+        if (categoryDatabases != null && categoryDatabases.Count > 0)
+        {
+            SelectCategory(categoryDatabases[0].category);
+        }
+        else
+        {
+            RefreshShopUI();
+        }
     }
 
     private void SetupCategoryButtons()
     {
-        if (categoryButtons == null || categoryButtons.Count == 0)
-        {
-            Debug.LogWarning("ShopManager: nenhum botão de categoria foi adicionado.", this);
+        if (categoryButtons == null)
             return;
-        }
 
         foreach (CategoryButtonUI button in categoryButtons)
         {
@@ -54,42 +41,31 @@ public class ShopManager : MonoBehaviour
                 continue;
 
             button.Setup(this);
+            button.SetSelected(hasSelectedCategory && button.Category == currentCategory);
         }
     }
 
     public void SelectCategory(ProductCategory category)
     {
         currentCategory = category;
-        GenerateShopByCategory(currentCategory);
-        UpdateCategoryButtonsVisual();
+        hasSelectedCategory = true;
+
+        RefreshCategoryButtons();
+        ShowCategory(category);
     }
 
-    private void UpdateCategoryButtonsVisual()
+    public void ShowCategory(ProductCategory category)
     {
-        foreach (CategoryButtonUI button in categoryButtons)
-        {
-            if (button == null)
-                continue;
+        currentCategory = category;
+        hasSelectedCategory = true;
 
-            button.SetSelected(button.Category == currentCategory);
-        }
-    }
-
-    public void GenerateShopByCategory(ProductCategory category)
-    {
-        ClearShop();
+        ClearProducts();
 
         ProductDatabase database = GetDatabaseByCategory(category);
 
-        if (database == null)
+        if (database == null || database.products == null)
         {
-            Debug.LogWarning($"ShopManager: nenhum banco encontrado para a categoria {category}.", this);
-            return;
-        }
-
-        if (database.products == null || database.products.Count == 0)
-        {
-            Debug.LogWarning($"ShopManager: o banco da categoria {category} está vazio.", this);
+            Debug.LogWarning($"[ShopManager] Nenhum banco encontrado para a categoria: {category}");
             return;
         }
 
@@ -101,14 +77,38 @@ public class ShopManager : MonoBehaviour
             if (!product.availableAtStart)
                 continue;
 
-            ShopItemUI itemUI = Instantiate(shopItemPrefab, contentParent);
-            itemUI.Setup(product, this);
-            instantiatedItems.Add(itemUI);
+            CreateProductCard(product);
         }
+    }
+
+    public void RefreshShopUI()
+    {
+        if (hasSelectedCategory)
+        {
+            ShowCategory(currentCategory);
+            RefreshCategoryButtons();
+            return;
+        }
+
+        if (categoryDatabases != null && categoryDatabases.Count > 0)
+        {
+            SelectCategory(categoryDatabases[0].category);
+            return;
+        }
+
+        ClearProducts();
+    }
+
+    public void RefreshCurrentCategory()
+    {
+        RefreshShopUI();
     }
 
     private ProductDatabase GetDatabaseByCategory(ProductCategory category)
     {
+        if (categoryDatabases == null)
+            return null;
+
         foreach (CategoryDatabaseEntry entry in categoryDatabases)
         {
             if (entry == null)
@@ -121,60 +121,82 @@ public class ShopManager : MonoBehaviour
         return null;
     }
 
-    private void ClearShop()
+    private void CreateProductCard(ProductData product)
     {
-        if (contentParent == null)
+        if (productListContent == null || productItemPrefab == null)
+        {
+            Debug.LogWarning("[ShopManager] Content ou prefab do produto não configurado.");
+            return;
+        }
+
+        ShopItemUI itemUI = Instantiate(productItemPrefab, productListContent);
+        itemUI.Setup(product, this);
+    }
+
+    private void ClearProducts()
+    {
+        if (productListContent == null)
             return;
 
-        foreach (Transform child in contentParent)
+        foreach (Transform child in productListContent)
         {
             Destroy(child.gameObject);
         }
-
-        instantiatedItems.Clear();
     }
 
-    public void TryBuyProduct(ProductData product, ShopItemUI itemUI)
+    private void RefreshCategoryButtons()
+    {
+        if (categoryButtons == null)
+            return;
+
+        foreach (CategoryButtonUI button in categoryButtons)
+        {
+            if (button == null)
+                continue;
+
+            button.SetSelected(hasSelectedCategory && button.Category == currentCategory);
+        }
+    }
+
+    public bool TryBuyProduct(ProductData product, ShopItemUI itemUI)
     {
         if (product == null)
         {
-            Debug.LogError("TryBuyProduct: product está NULL.");
-            return;
-        }
-
-        if (itemUI == null)
-        {
-            Debug.LogError("TryBuyProduct: itemUI está NULL.");
-            return;
+            Debug.LogWarning("[ShopManager] Produto inválido.");
+            return false;
         }
 
         if (InventoryManager.Instance == null)
         {
-            Debug.LogError("TryBuyProduct: InventoryManager.Instance está NULL.");
-            return;
-        }
-
-        if (FinanceManager.Instance == null)
-        {
-            Debug.LogError("TryBuyProduct: FinanceManager.Instance está NULL.");
-            return;
+            Debug.LogWarning("[ShopManager] InventoryManager não encontrado.");
+            return false;
         }
 
         if (InventoryManager.Instance.OwnsProduct(product.productId))
         {
-            Debug.Log("Produto já comprado.");
-            return;
+            Debug.Log($"[ShopManager] Produto já comprado: {product.productName}");
+
+            if (itemUI != null)
+                itemUI.RefreshState();
+
+            return false;
+        }
+
+        if (FinanceManager.Instance == null)
+        {
+            Debug.LogWarning("[ShopManager] FinanceManager não encontrado.");
+            return false;
         }
 
         if (!FinanceManager.Instance.HasEnoughMoney(product.preco))
         {
-            Debug.Log("Dinheiro insuficiente.");
-            return;
+            Debug.Log($"[ShopManager] Dinheiro insuficiente para comprar: {product.productName}");
+            return false;
         }
 
         FinanceMovementData movement = FinanceManager.Instance.RegisterShopPurchaseExpense(
-            $"Compra de {product.productName}",
-            $"Produto comprado na loja. ID: {product.productId}",
+            $"Compra: {product.productName}",
+            product.description,
             product.preco,
             FinanceMovementOrigin.ProductPurchase,
             true
@@ -182,18 +204,17 @@ public class ShopManager : MonoBehaviour
 
         if (movement == null)
         {
-            Debug.Log("Não foi possível concluir a compra.");
-            return;
+            Debug.LogWarning($"[ShopManager] Não foi possível registrar a compra: {product.productName}");
+            return false;
         }
 
         InventoryManager.Instance.AddProduct(product);
-        itemUI.RefreshState();
 
-        Debug.Log($"Produto comprado: {product.productName}");
-    }
+        if (itemUI != null)
+            itemUI.RefreshState();
 
-    public void RefreshShopUI()
-    {
-        GenerateShopByCategory(currentCategory);
+        Debug.Log($"[ShopManager] Produto comprado: {product.productName} por R$ {product.preco}");
+
+        return true;
     }
 }

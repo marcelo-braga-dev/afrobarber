@@ -11,13 +11,36 @@ public class ShopItemUI : MonoBehaviour
     [SerializeField] private Button buyButton;
     [SerializeField] private TMP_Text buttonText;
 
-    [Header("Atributos")]
+    [Header("Container geral dos atributos")]
+    [SerializeField] private GameObject attributesContainer;
+
+    [Header("Precisão")]
+    [SerializeField] private GameObject precisaoRoot;
     [SerializeField] private TMP_Text precisaoText;
     [SerializeField] private Slider precisaoSlider;
+
+    [Header("Velocidade")]
+    [SerializeField] private GameObject velocidadeRoot;
     [SerializeField] private TMP_Text velocidadeText;
     [SerializeField] private Slider velocidadeSlider;
+
+    [Header("Durabilidade")]
+    [SerializeField] private GameObject durabilidadeRoot;
     [SerializeField] private TMP_Text durabilidadeText;
     [SerializeField] private Slider durabilidadeSlider;
+
+    [Header("Conforto")]
+    [SerializeField] private GameObject confortoRoot;
+    [SerializeField] private TMP_Text confortoText;
+    [SerializeField] private Slider confortoSlider;
+
+    [Header("Estética")]
+    [SerializeField] private GameObject esteticaRoot;
+    [SerializeField] private TMP_Text esteticaText;
+    [SerializeField] private Slider esteticaSlider;
+
+    [Header("Tempo de entrega")]
+    [SerializeField] private GameObject tempoEntregaRoot;
     [SerializeField] private TMP_Text tempoEntregaText;
 
     private ProductData currentProduct;
@@ -28,17 +51,27 @@ public class ShopItemUI : MonoBehaviour
         currentProduct = product;
         shopManager = manager;
 
-        if (productIcon != null) productIcon.sprite = product.icon;
-        if (productNameText != null) productNameText.text = product.productName;
-        if (productPriceText != null) productPriceText.text = $"R${product.preco},00";
-        if (precisaoText != null) precisaoText.text = $"{product.precisao}";
-        if (velocidadeText != null) velocidadeText.text = $"{product.velocidade}";
-        if (durabilidadeText != null) durabilidadeText.text = $"{product.durabilidade}";
-        if (tempoEntregaText != null) tempoEntregaText.text = $"{product.tempoEntrega}h";
+        if (product == null)
+        {
+            gameObject.SetActive(false);
+            return;
+        }
 
-        if (precisaoSlider != null) precisaoSlider.value = product.precisao;
-        if (velocidadeSlider != null) velocidadeSlider.value = product.velocidade;
-        if (durabilidadeSlider != null) durabilidadeSlider.value = product.durabilidade;
+        gameObject.SetActive(true);
+
+        if (productIcon != null)
+        {
+            productIcon.sprite = product.icon;
+            productIcon.enabled = product.icon != null;
+        }
+
+        if (productNameText != null)
+            productNameText.text = product.productName;
+
+        if (productPriceText != null)
+            productPriceText.text = $"R$ {product.preco:N0},00";
+
+        SetupAttributes(product);
 
         if (buyButton != null)
         {
@@ -49,26 +82,138 @@ public class ShopItemUI : MonoBehaviour
         RefreshState();
     }
 
+    private void SetupAttributes(ProductData product)
+    {
+        bool showAttributes = product != null && product.HasAnyVisibleAttribute();
+
+        if (attributesContainer != null)
+            attributesContainer.SetActive(showAttributes);
+
+        if (product == null)
+            return;
+
+        SetupAttributeRow(
+            precisaoRoot,
+            precisaoText,
+            precisaoSlider,
+            showAttributes && product.showPrecisao,
+            product.precisao
+        );
+
+        SetupAttributeRow(
+            velocidadeRoot,
+            velocidadeText,
+            velocidadeSlider,
+            showAttributes && product.showVelocidade,
+            product.velocidade
+        );
+
+        SetupAttributeRow(
+            durabilidadeRoot,
+            durabilidadeText,
+            durabilidadeSlider,
+            showAttributes && product.showDurabilidade,
+            product.durabilidade
+        );
+
+        SetupAttributeRow(
+            confortoRoot,
+            confortoText,
+            confortoSlider,
+            showAttributes && product.showConforto,
+            product.conforto
+        );
+
+        SetupAttributeRow(
+            esteticaRoot,
+            esteticaText,
+            esteticaSlider,
+            showAttributes && product.showEstetica,
+            product.estetica
+        );
+
+        SetupTempoEntrega(product, showAttributes);
+    }
+
+    private void SetupAttributeRow(
+        GameObject root,
+        TMP_Text valueText,
+        Slider slider,
+        bool show,
+        int value)
+    {
+        if (root != null)
+            root.SetActive(show);
+
+        if (!show)
+            return;
+
+        int clampedValue = Mathf.Clamp(value, 0, 100);
+
+        if (valueText != null)
+            valueText.text = clampedValue.ToString();
+
+        if (slider != null)
+        {
+            slider.minValue = 0;
+            slider.maxValue = 100;
+            slider.wholeNumbers = true;
+            slider.interactable = false;
+            slider.value = clampedValue;
+        }
+    }
+
+    private void SetupTempoEntrega(ProductData product, bool showAttributes)
+    {
+        bool show = showAttributes && product.showTempoEntrega;
+
+        if (tempoEntregaRoot != null)
+            tempoEntregaRoot.SetActive(show);
+
+        if (!show)
+            return;
+
+        if (tempoEntregaText != null)
+        {
+            if (product.tempoEntrega <= 0)
+                tempoEntregaText.text = "Imediato";
+            else
+                tempoEntregaText.text = $"{product.tempoEntrega}h";
+        }
+    }
+
     public void RefreshState()
     {
         if (currentProduct == null)
             return;
 
-        if (InventoryManager.Instance != null && InventoryManager.Instance.OwnsProduct(currentProduct.productId))
+        bool alreadyBought =
+            InventoryManager.Instance != null &&
+            InventoryManager.Instance.OwnsProduct(currentProduct.productId);
+
+        if (alreadyBought)
         {
-            if (buttonText != null) buttonText.text = "Comprado";
-            if (buyButton != null) buyButton.interactable = false;
+            if (buttonText != null)
+                buttonText.text = "Comprado";
+
+            if (buyButton != null)
+                buyButton.interactable = false;
         }
         else
         {
-            if (buttonText != null) buttonText.text = "Comprar";
-            if (buyButton != null) buyButton.interactable = true;
+            if (buttonText != null)
+                buttonText.text = "Comprar";
+
+            if (buyButton != null)
+                buyButton.interactable = true;
         }
     }
 
     private void BuyProduct()
     {
-        if (shopManager != null && currentProduct != null)
-            shopManager.TryBuyProduct(currentProduct, this);
+        if (shopManager == null || currentProduct == null)
+            return;
+
+        shopManager.TryBuyProduct(currentProduct, this);
     }
 }
