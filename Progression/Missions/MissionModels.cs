@@ -43,7 +43,7 @@ public class MissionTierDefinition
     public List<MissionRewardDefinition> rewards = new List<MissionRewardDefinition>();
 }
 
-[CreateAssetMenu(fileName = "MissionDefinition", menuName = "Afrobarber/Missions/Mission Definition")]
+[CreateAssetMenu(fileName = "MissionDefinition", menuName = "AfroBarber/Missions/Mission Definition")]
 public class MissionDefinition : ScriptableObject
 {
     [Header("Identidade")]

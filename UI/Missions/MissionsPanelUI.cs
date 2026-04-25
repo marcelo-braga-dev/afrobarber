@@ -14,8 +14,17 @@ public class MissionsPanelUI : MonoBehaviour
     [SerializeField] private Transform historyListParent;
     [SerializeField] private MissionHistoryItemUI historyItemPrefab;
 
+    [Header("Configuração")]
+    [SerializeField] private bool startClosed = true;
+
     private readonly List<MissionProgressItemUI> missionItems = new List<MissionProgressItemUI>();
     private readonly List<MissionHistoryItemUI> historyItems = new List<MissionHistoryItemUI>();
+
+    private void Start()
+    {
+        if (rootPanel != null && startClosed)
+            rootPanel.SetActive(false);
+    }
 
     private void OnEnable()
     {
@@ -36,14 +45,48 @@ public class MissionsPanelUI : MonoBehaviour
         if (rootPanel == null)
             return;
 
-        rootPanel.SetActive(!rootPanel.activeSelf);
+        bool willOpen = !rootPanel.activeSelf;
+        rootPanel.SetActive(willOpen);
 
-        if (rootPanel.activeSelf)
+        if (willOpen)
+            Refresh();
+    }
+
+    public void Open()
+    {
+        if (rootPanel == null)
+            return;
+
+        if (!rootPanel.activeSelf)
+            rootPanel.SetActive(true);
+
+        Refresh();
+    }
+
+    public void Close()
+    {
+        if (rootPanel == null)
+            return;
+
+        rootPanel.SetActive(false);
+    }
+
+    public void SetOpen(bool isOpen)
+    {
+        if (rootPanel == null)
+            return;
+
+        rootPanel.SetActive(isOpen);
+
+        if (isOpen)
             Refresh();
     }
 
     public void Refresh()
     {
+        if (rootPanel != null && !rootPanel.activeInHierarchy)
+            return;
+
         RefreshMissions();
         RefreshHistory();
     }

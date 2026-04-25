@@ -12,9 +12,11 @@ public class GameUIManager : MonoBehaviour
     [SerializeField] private GameObject uiNotificacao;
     [SerializeField] private GameObject uiAtendimento;
     [SerializeField] private GameObject uiFila;
+    [SerializeField] private GameObject uiAgenda;
     [SerializeField] private GameObject uiHistoricoAtendimento;
     [SerializeField] private GameObject uiAvaliacaoAtendimento;
     [SerializeField] private GameObject uiReputacaoDetalhada;
+    [SerializeField] private GameObject uiMissoes;
 
     [Header("Configuração")]
     [SerializeField] private bool notificationCanStayWithOtherUI = false;
@@ -39,9 +41,7 @@ public class GameUIManager : MonoBehaviour
     private void Update()
     {
         if (Input.GetKeyDown(KeyCode.Escape))
-        {
             HideAll();
-        }
     }
 
     public void OpenFinanceiro()
@@ -51,9 +51,7 @@ public class GameUIManager : MonoBehaviour
         ToggleExclusiveUI(uiFinanceiro);
 
         if (willOpen && FinanceUIController.Instance != null)
-        {
             FinanceUIController.Instance.RefreshUI();
-        }
     }
 
     public void OpenGestao()
@@ -68,9 +66,7 @@ public class GameUIManager : MonoBehaviour
         ToggleExclusiveUI(uiInventario);
 
         if (willOpen && InventoryUIManager.Instance != null)
-        {
             InventoryUIManager.Instance.RefreshUI();
-        }
     }
 
     public void OpenLoja()
@@ -83,9 +79,7 @@ public class GameUIManager : MonoBehaviour
         {
             ShopManager shop = FindFirstObjectByType<ShopManager>();
             if (shop != null)
-            {
                 shop.RefreshShopUI();
-            }
         }
     }
 
@@ -104,9 +98,21 @@ public class GameUIManager : MonoBehaviour
         {
             QueueUIManager queueUI = FindFirstObjectByType<QueueUIManager>();
             if (queueUI != null)
-            {
                 queueUI.RefreshQueueUI();
-            }
+        }
+    }
+
+    public void OpenAgenda()
+    {
+        bool willOpen = uiAgenda != null && !uiAgenda.activeSelf;
+
+        ToggleExclusiveUI(uiAgenda);
+
+        if (willOpen)
+        {
+            AppointmentPanelUI agendaUI = FindFirstObjectByType<AppointmentPanelUI>();
+            if (agendaUI != null)
+                agendaUI.Refresh();
         }
     }
 
@@ -120,9 +126,7 @@ public class GameUIManager : MonoBehaviour
         {
             ServiceHistoryUI historyUI = FindFirstObjectByType<ServiceHistoryUI>();
             if (historyUI != null)
-            {
                 historyUI.RefreshHistoryUI();
-            }
         }
     }
 
@@ -147,6 +151,21 @@ public class GameUIManager : MonoBehaviour
         ToggleExclusiveUI(uiNotificacao);
     }
 
+    public void OpenMissoes()
+    {
+        bool willOpen = uiMissoes != null && !uiMissoes.activeSelf;
+
+        ToggleExclusiveUI(uiMissoes);
+
+        if (willOpen)
+        {
+            MissionsPanelUI missionsUI = FindFirstObjectByType<MissionsPanelUI>();
+            if (missionsUI != null)
+                missionsUI.Refresh();
+        }
+    }
+
+    public void CloseMissoes() => CloseUI(uiMissoes);
     public void CloseFinanceiro() => CloseUI(uiFinanceiro);
     public void CloseGestao() => CloseUI(uiGestao);
     public void CloseInventario() => CloseUI(uiInventario);
@@ -154,6 +173,7 @@ public class GameUIManager : MonoBehaviour
     public void CloseNotificacao() => CloseUI(uiNotificacao);
     public void CloseAtendimento() => CloseUI(uiAtendimento);
     public void CloseFila() => CloseUI(uiFila);
+    public void CloseAgenda() => CloseUI(uiAgenda);
     public void CloseHistoricoAtendimento() => CloseUI(uiHistoricoAtendimento);
     public void CloseAvaliacaoAtendimento() => CloseUI(uiAvaliacaoAtendimento);
     public void CloseReputacaoDetalhada() => CloseUI(uiReputacaoDetalhada);
@@ -205,11 +225,12 @@ public class GameUIManager : MonoBehaviour
         if (uiLoja != null) uiLoja.SetActive(false);
         if (uiNotificacao != null) uiNotificacao.SetActive(false);
         if (uiAtendimento != null) uiAtendimento.SetActive(false);
-
         if (uiFila != null) uiFila.SetActive(false);
+        if (uiAgenda != null) uiAgenda.SetActive(false);
         if (uiHistoricoAtendimento != null) uiHistoricoAtendimento.SetActive(false);
         if (uiAvaliacaoAtendimento != null) uiAvaliacaoAtendimento.SetActive(false);
         if (uiReputacaoDetalhada != null) uiReputacaoDetalhada.SetActive(false);
+        if (uiMissoes != null) uiMissoes.SetActive(false);
 
         currentOpenUI = null;
     }
@@ -224,9 +245,11 @@ public class GameUIManager : MonoBehaviour
             IsUIOpen(uiNotificacao) ||
             IsUIOpen(uiAtendimento) ||
             IsUIOpen(uiFila) ||
+            IsUIOpen(uiAgenda) ||
             IsUIOpen(uiHistoricoAtendimento) ||
             IsUIOpen(uiAvaliacaoAtendimento) ||
-            IsUIOpen(uiReputacaoDetalhada);
+            IsUIOpen(uiReputacaoDetalhada) ||
+            IsUIOpen(uiMissoes);
     }
 
     public bool IsBlockingUIOpen()
@@ -238,9 +261,11 @@ public class GameUIManager : MonoBehaviour
             IsUIOpen(uiLoja) ||
             IsUIOpen(uiAtendimento) ||
             IsUIOpen(uiFila) ||
+            IsUIOpen(uiAgenda) ||
             IsUIOpen(uiHistoricoAtendimento) ||
             IsUIOpen(uiAvaliacaoAtendimento) ||
             IsUIOpen(uiReputacaoDetalhada) ||
+            IsUIOpen(uiMissoes) ||
             (!notificationCanStayWithOtherUI && IsUIOpen(uiNotificacao));
     }
 

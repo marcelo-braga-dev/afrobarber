@@ -1,0 +1,25 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 0}
+  m_Name: Faturando_Alto
+  m_EditorClassIdentifier: Assembly-CSharp::MissionDefinition
+  missionId: 564a25835f554687b7eb5243fc97b739
+  title: "Nova miss\xE3o"
+  description: 
+  metricType: 0
+  specificCutId: 
+  scheduleType: 0
+  isTemporary: 0
+  seasonTag: 
+  startsAtIsoUtc: 
+  endsAtIsoUtc: 
+  tiers: []

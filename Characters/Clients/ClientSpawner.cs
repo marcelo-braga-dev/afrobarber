@@ -20,7 +20,7 @@ public class ClientSpawner : MonoBehaviour
     [SerializeField] private Transform exitPoint;
 
     [Header("Spawn")]
-    [SerializeField] private bool autoSpawn = true;
+    [SerializeField] private bool autoSpawn = false;
     [SerializeField] private float minSpawnDelay = 4f;
     [SerializeField] private float maxSpawnDelay = 10f;
     [SerializeField] private int maxClientsAlive = 10;
@@ -39,23 +39,6 @@ public class ClientSpawner : MonoBehaviour
     private void Awake()
     {
         AutoFindReferences();
-    }
-
-    private void AutoFindReferences()
-    {
-        if (waitingAreaManager == null)
-            waitingAreaManager = FindFirstObjectByType<WaitingAreaManager>();
-
-        if (playerTransform == null)
-        {
-            GameObject player = GameObject.FindGameObjectWithTag("Player");
-
-            if (player != null)
-                playerTransform = player.transform;
-        }
-
-        if (exitPoint == null && BarbershopServiceManager.Instance != null)
-            exitPoint = BarbershopServiceManager.Instance.ExitPoint;
     }
 
     private void Start()
@@ -85,6 +68,23 @@ public class ClientSpawner : MonoBehaviour
         {
             clientsDismissedForClosedHours = false;
         }
+    }
+
+    private void AutoFindReferences()
+    {
+        if (waitingAreaManager == null)
+            waitingAreaManager = FindFirstObjectByType<WaitingAreaManager>();
+
+        if (playerTransform == null)
+        {
+            GameObject player = GameObject.FindGameObjectWithTag("Player");
+
+            if (player != null)
+                playerTransform = player.transform;
+        }
+
+        if (exitPoint == null && BarbershopServiceManager.Instance != null)
+            exitPoint = BarbershopServiceManager.Instance.ExitPoint;
     }
 
     private IEnumerator SpawnLoop()
@@ -124,12 +124,8 @@ public class ClientSpawner : MonoBehaviour
         if (!CanSpawnNow())
             return false;
 
-        Debug.Log($"[ClientSpawner] Antes de validar | waitingAreaManager: {(waitingAreaManager != null ? waitingAreaManager.name : "NULL")}");
-
         if (!ValidateReferences())
             return false;
-
-        Debug.Log($"[ClientSpawner] Referências OK. Vai tentar spawnar cliente.");
 
         if (aliveClients.Count >= maxClientsAlive)
             return false;
@@ -170,24 +166,71 @@ public class ClientSpawner : MonoBehaviour
             return false;
         }
 
-        ConfigureSpawnedClient(client, prefabToSpawn);
-
-        aliveClients.Add(client);
-
-        if (preventDuplicatePrefabAlive)
-            activePrefabTypes.Add(prefabToSpawn);
+        ConfigureSpawnedClient(client, prefabToSpawn, null);
 
         return true;
     }
 
-    private void ConfigureSpawnedClient(ClientNPC client, GameObject sourcePrefab)
+    public bool TrySpawnScheduledClient(
+    GameObject prefab,
+    ClientRequestData requestOverride,
+    out ClientNPC spawnedClient
+)
+    {
+        spawnedClient = null;
+
+        CleanupDestroyedClients();
+
+        if (!ValidateReferences())
+            return false;
+
+        if (aliveClients.Count >= maxClientsAlive)
+            return false;
+
+        if (prefab == null)
+            return false;
+
+        if (preventDuplicatePrefabAlive && activePrefabTypes.Contains(prefab))
+            return false;
+
+        Transform selectedSpawnPoint = GetAvailableSpawnPoint();
+
+        if (selectedSpawnPoint == null)
+            return false;
+
+        GameObject instance = Instantiate(
+            prefab,
+            selectedSpawnPoint.position,
+            selectedSpawnPoint.rotation
+        );
+
+        ClientNPC client = instance.GetComponent<ClientNPC>();
+
+        if (client == null)
+        {
+            Destroy(instance);
+            return false;
+        }
+
+        ConfigureSpawnedClient(client, prefab, requestOverride);
+
+        spawnedClient = client;
+
+        Debug.Log($"[ClientSpawner] Cliente spawnado via agenda: {prefab.name}");
+
+        return true;
+    }
+
+    private void ConfigureSpawnedClient(ClientNPC client, GameObject sourcePrefab, ClientRequestData requestOverride)
     {
         if (client == null)
             return;
 
         client.SetPlayerTransform(playerTransform);
 
-        ClientRequestData fallbackRequest = GetFallbackRequestIfNeeded(client);
+        ClientRequestData fallbackRequest = requestOverride != null
+            ? requestOverride
+            : GetFallbackRequestIfNeeded(client);
 
         client.Initialize(
             this,
@@ -199,6 +242,11 @@ public class ClientSpawner : MonoBehaviour
             fallbackRequest
         );
 
+        aliveClients.Add(client);
+
+        if (preventDuplicatePrefabAlive)
+            activePrefabTypes.Add(sourcePrefab);
+
         LogClientConfiguration(client, fallbackRequest);
     }
 
@@ -207,8 +255,6 @@ public class ClientSpawner : MonoBehaviour
         if (client == null)
             return null;
 
-        // Se o cliente já tiver perfil fixo com request definido,
-        // o fallback não precisa ser usado.
         if (client.HasFixedProfileRequest())
             return null;
 
@@ -302,7 +348,7 @@ public class ClientSpawner : MonoBehaviour
 
         if (waitingAreaManager == null)
         {
-            Debug.LogWarning("[ClientSpawner] waitingAreaManager não configurado. Nenhum WaitingAreaManager foi encontrado na cena.");
+            Debug.LogWarning("[ClientSpawner] waitingAreaManager não configurado.");
             return false;
         }
 
@@ -403,6 +449,9 @@ public class ClientSpawner : MonoBehaviour
 
         if (preventDuplicatePrefabAlive && client.SourcePrefab != null)
             activePrefabTypes.Remove(client.SourcePrefab);
+
+        if (ClientAppointmentScheduler.Instance != null)
+            ClientAppointmentScheduler.Instance.NotifyClientFinished(client);
     }
 
     private void CleanupDestroyedClients()
