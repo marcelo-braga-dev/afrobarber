@@ -5,6 +5,7 @@ using UnityEngine;
 public class ServicePriceTable : ScriptableObject
 {
     [SerializeField] private List<ServicePriceEntry> prices = new List<ServicePriceEntry>();
+    public IReadOnlyList<ServicePriceEntry> Prices => prices;
 
     public int GetPrice(ServiceType serviceType, string customServiceId = "")
     {

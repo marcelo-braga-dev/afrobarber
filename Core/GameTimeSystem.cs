@@ -105,6 +105,7 @@ public class GameTimeSystem : MonoBehaviour
     public int OpeningMinute => openingMinute;
     public int ClosingHour => closingHour;
     public int ClosingMinute => closingMinute;
+
     public int OpeningTotalMinutes => openingHour * 60 + openingMinute;
     public int ClosingTotalMinutes => closingHour * 60 + closingMinute;
     public int CityRestCallTotalMinutes => cityRestCallHour * 60 + cityRestCallMinute;
@@ -115,6 +116,14 @@ public class GameTimeSystem : MonoBehaviour
     public bool IsAfterBarbershopClosingTime => CurrentTotalMinutes >= ClosingTotalMinutes;
     public bool IsAfterCityRestCallTime => CurrentTotalMinutes >= CityRestCallTotalMinutes;
     public bool IsAnimatingVisualClock => isAnimatingVisualClock;
+
+    public bool IsMondayWorkDay => monday;
+    public bool IsTuesdayWorkDay => tuesday;
+    public bool IsWednesdayWorkDay => wednesday;
+    public bool IsThursdayWorkDay => thursday;
+    public bool IsFridayWorkDay => friday;
+    public bool IsSaturdayWorkDay => saturday;
+    public bool IsSundayWorkDay => sunday;
 
     public float CurrentTimeOfDayMinutes => CurrentTotalMinutes;
     public float TotalMinutesElapsed => (float)(CurrentDateTime - DateTime.MinValue).TotalMinutes;
@@ -389,6 +398,21 @@ public class GameTimeSystem : MonoBehaviour
         return CurrentTotalMinutes;
     }
 
+    public bool IsWorkDayByDayIndex(int dayIndex)
+    {
+        DayOfWeek day = DayOfWeekFromIndex(dayIndex);
+        return IsConfiguredWorkDay(day);
+    }
+
+    public bool IsMinuteInsideBusinessHours(int dayIndex, int minuteOfDay)
+    {
+        if (!IsWorkDayByDayIndex(dayIndex))
+            return false;
+
+        minuteOfDay = Mathf.Clamp(minuteOfDay, 0, (24 * 60) - 1);
+        return minuteOfDay >= OpeningTotalMinutes && minuteOfDay < ClosingTotalMinutes;
+    }
+
     private void EnqueueVisualMinutes(int minutesToAdd)
     {
         for (int i = 0; i < minutesToAdd; i++)
@@ -474,6 +498,23 @@ public class GameTimeSystem : MonoBehaviour
             case DayOfWeek.Saturday: return saturday;
             case DayOfWeek.Sunday: return sunday;
             default: return false;
+        }
+    }
+
+    private DayOfWeek DayOfWeekFromIndex(int dayIndex)
+    {
+        int normalizedDay = ((dayIndex % 7) + 7) % 7;
+
+        switch (normalizedDay)
+        {
+            case 0: return DayOfWeek.Monday;
+            case 1: return DayOfWeek.Tuesday;
+            case 2: return DayOfWeek.Wednesday;
+            case 3: return DayOfWeek.Thursday;
+            case 4: return DayOfWeek.Friday;
+            case 5: return DayOfWeek.Saturday;
+            case 6: return DayOfWeek.Sunday;
+            default: return DayOfWeek.Monday;
         }
     }
 
