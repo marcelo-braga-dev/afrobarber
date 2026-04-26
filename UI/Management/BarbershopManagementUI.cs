@@ -8,11 +8,15 @@ public class BarbershopManagementUI : MonoBehaviour
     [Header("Panel")]
     [SerializeField] private GameObject rootPanel;
 
-    [Header("Horário")]
-    [SerializeField] private TMP_InputField openingHourInput;
-    [SerializeField] private TMP_InputField openingMinuteInput;
-    [SerializeField] private TMP_InputField closingHourInput;
-    [SerializeField] private TMP_InputField closingMinuteInput;
+    [Header("Dropdowns de horário")]
+    [SerializeField] private TMP_Dropdown openingHourDropdown;
+    [SerializeField] private TMP_Dropdown openingMinuteDropdown;
+    [SerializeField] private TMP_Dropdown closingHourDropdown;
+    [SerializeField] private TMP_Dropdown closingMinuteDropdown;
+
+    [Header("Configuração dos minutos")]
+    [Tooltip("Use 1 para listar todos os minutos de 00 a 59. Use 5 para listar 00, 05, 10, 15...")]
+    [SerializeField] private int minuteStep = 5;
 
     [Header("Dias")]
     [SerializeField] private Toggle mondayToggle;
@@ -40,8 +44,13 @@ public class BarbershopManagementUI : MonoBehaviour
 
     private readonly List<ServicePriceManagementRowUI> createdRows = new List<ServicePriceManagementRowUI>();
 
+    private bool dropdownsInitialized;
+    private bool isRefreshing;
+
     private void Awake()
     {
+        InitializeTimeDropdowns();
+
         if (saveButton != null)
             saveButton.onClick.AddListener(OnClickSave);
 
@@ -87,15 +96,20 @@ public class BarbershopManagementUI : MonoBehaviour
         if (GlobalGameplayManagement.Instance == null)
             return;
 
+        InitializeTimeDropdowns();
+
+        isRefreshing = true;
+
         GlobalGameplayManagement management = GlobalGameplayManagement.Instance;
 
         for (int i = 0; i < createdRows.Count; i++)
             createdRows[i].Bind(management);
 
-        SetInputValue(openingHourInput, management.GetOpeningHour());
-        SetInputValue(openingMinuteInput, management.GetOpeningMinute());
-        SetInputValue(closingHourInput, management.GetClosingHour());
-        SetInputValue(closingMinuteInput, management.GetClosingMinute());
+        SetHourDropdownValue(openingHourDropdown, management.GetOpeningHour());
+        SetMinuteDropdownValue(openingMinuteDropdown, management.GetOpeningMinute());
+
+        SetHourDropdownValue(closingHourDropdown, management.GetClosingHour());
+        SetMinuteDropdownValue(closingMinuteDropdown, management.GetClosingMinute());
 
         SetToggle(mondayToggle, management.GetSuggestedMonday());
         SetToggle(tuesdayToggle, management.GetSuggestedTuesday());
@@ -109,6 +123,8 @@ public class BarbershopManagementUI : MonoBehaviour
             createdRows[i].RefreshFromManagement(management);
 
         RefreshSummary();
+
+        isRefreshing = false;
     }
 
     private void BuildPriceRowsIfNeeded()
@@ -117,10 +133,13 @@ public class BarbershopManagementUI : MonoBehaviour
             return;
 
         ServiceType[] types = (ServiceType[])System.Enum.GetValues(typeof(ServiceType));
+
         for (int i = 0; i < types.Length; i++)
         {
+            ServiceType type = types[i];
+
             ServicePriceManagementRowUI row = Instantiate(rowPrefab, priceRowsParent);
-            row.Setup(types[i]);
+            row.Setup(type);
             row.Bind(GlobalGameplayManagement.Instance);
             createdRows.Add(row);
         }
@@ -133,10 +152,25 @@ public class BarbershopManagementUI : MonoBehaviour
 
         GlobalGameplayManagement management = GlobalGameplayManagement.Instance;
 
-        int openHour = ParseInt(openingHourInput, management.GetOpeningHour(), 0, 23);
-        int openMinute = ParseInt(openingMinuteInput, management.GetOpeningMinute(), 0, 59);
-        int closeHour = ParseInt(closingHourInput, management.GetClosingHour(), 0, 23);
-        int closeMinute = ParseInt(closingMinuteInput, management.GetClosingMinute(), 0, 59);
+        int openHour = GetHourDropdownValue(openingHourDropdown, management.GetOpeningHour());
+        int openMinute = GetMinuteDropdownValue(openingMinuteDropdown, management.GetOpeningMinute());
+
+        int closeHour = GetHourDropdownValue(closingHourDropdown, management.GetClosingHour());
+        int closeMinute = GetMinuteDropdownValue(closingMinuteDropdown, management.GetClosingMinute());
+
+        if (!IsValidBusinessWindow(openHour, openMinute, closeHour, closeMinute))
+        {
+            Debug.LogWarning("[Gestão] Horário inválido. O fechamento precisa ser depois da abertura.");
+            RefreshAll();
+            return;
+        }
+
+        if (!HasAnyWorkDaySelected())
+        {
+            Debug.LogWarning("[Gestão] Selecione pelo menos um dia de funcionamento.");
+            RefreshAll();
+            return;
+        }
 
         management.SetSuggestedBusinessHours(openHour, openMinute, closeHour, closeMinute);
 
@@ -172,7 +206,8 @@ public class BarbershopManagementUI : MonoBehaviour
                 ? "Aberta"
                 : "Fechada";
 
-            businessStatusText.text = $"Barbearia: {status} ({GameTimeSystem.Instance.OpeningHour:00}:{GameTimeSystem.Instance.OpeningMinute:00} - {GameTimeSystem.Instance.ClosingHour:00}:{GameTimeSystem.Instance.ClosingMinute:00})";
+            businessStatusText.text =
+                $"Barbearia: {status} ({GameTimeSystem.Instance.OpeningHour:00}:{GameTimeSystem.Instance.OpeningMinute:00} - {GameTimeSystem.Instance.ClosingHour:00}:{GameTimeSystem.Instance.ClosingMinute:00})";
         }
 
         if (GlobalGameplayManagement.Instance != null && overworkMultiplierText != null)
@@ -185,31 +220,108 @@ public class BarbershopManagementUI : MonoBehaviour
             demandHintText.text = "Demanda: preços acima do sugerido reduzem fluxo; abaixo aumentam.";
     }
 
-    private static void SetInputValue(TMP_InputField field, int value)
+    private void InitializeTimeDropdowns()
     {
-        if (field != null)
-            field.text = value.ToString("00");
+        if (dropdownsInitialized)
+            return;
+
+        minuteStep = Mathf.Clamp(minuteStep, 1, 30);
+
+        SetupNumberDropdown(openingHourDropdown, 0, 23, 1);
+        SetupNumberDropdown(closingHourDropdown, 0, 23, 1);
+
+        SetupNumberDropdown(openingMinuteDropdown, 0, 59, minuteStep);
+        SetupNumberDropdown(closingMinuteDropdown, 0, 59, minuteStep);
+
+        dropdownsInitialized = true;
+    }
+
+    private static void SetupNumberDropdown(TMP_Dropdown dropdown, int min, int max, int step)
+    {
+        if (dropdown == null)
+            return;
+
+        dropdown.ClearOptions();
+
+        List<string> options = new List<string>();
+
+        for (int value = min; value <= max; value += Mathf.Max(1, step))
+            options.Add(value.ToString("00"));
+
+        dropdown.AddOptions(options);
+        dropdown.RefreshShownValue();
+    }
+
+    private static void SetHourDropdownValue(TMP_Dropdown dropdown, int hour)
+    {
+        if (dropdown == null || dropdown.options == null || dropdown.options.Count == 0)
+            return;
+
+        int value = Mathf.Clamp(hour, 0, 23);
+        int index = Mathf.Clamp(value, 0, dropdown.options.Count - 1);
+
+        dropdown.SetValueWithoutNotify(index);
+        dropdown.RefreshShownValue();
+    }
+
+    private void SetMinuteDropdownValue(TMP_Dropdown dropdown, int minute)
+    {
+        if (dropdown == null || dropdown.options == null || dropdown.options.Count == 0)
+            return;
+
+        minute = Mathf.Clamp(minute, 0, 59);
+
+        int index = Mathf.RoundToInt((float)minute / Mathf.Max(1, minuteStep));
+        index = Mathf.Clamp(index, 0, dropdown.options.Count - 1);
+
+        dropdown.SetValueWithoutNotify(index);
+        dropdown.RefreshShownValue();
+    }
+
+    private static int GetHourDropdownValue(TMP_Dropdown dropdown, int fallback)
+    {
+        if (dropdown == null || dropdown.options == null || dropdown.options.Count == 0)
+            return Mathf.Clamp(fallback, 0, 23);
+
+        return Mathf.Clamp(dropdown.value, 0, 23);
+    }
+
+    private int GetMinuteDropdownValue(TMP_Dropdown dropdown, int fallback)
+    {
+        if (dropdown == null || dropdown.options == null || dropdown.options.Count == 0)
+            return Mathf.Clamp(fallback, 0, 59);
+
+        int minute = dropdown.value * Mathf.Max(1, minuteStep);
+        return Mathf.Clamp(minute, 0, 59);
+    }
+
+    private bool IsValidBusinessWindow(int openHour, int openMinute, int closeHour, int closeMinute)
+    {
+        int openingTotal = (openHour * 60) + openMinute;
+        int closingTotal = (closeHour * 60) + closeMinute;
+
+        return closingTotal > openingTotal;
+    }
+
+    private bool HasAnyWorkDaySelected()
+    {
+        return GetToggleValue(mondayToggle) ||
+               GetToggleValue(tuesdayToggle) ||
+               GetToggleValue(wednesdayToggle) ||
+               GetToggleValue(thursdayToggle) ||
+               GetToggleValue(fridayToggle) ||
+               GetToggleValue(saturdayToggle) ||
+               GetToggleValue(sundayToggle);
     }
 
     private static void SetToggle(Toggle toggle, bool value)
     {
         if (toggle != null)
-            toggle.isOn = value;
+            toggle.SetIsOnWithoutNotify(value);
     }
 
     private static bool GetToggleValue(Toggle toggle)
     {
         return toggle != null && toggle.isOn;
-    }
-
-    private static int ParseInt(TMP_InputField field, int fallback, int min, int max)
-    {
-        if (field == null)
-            return Mathf.Clamp(fallback, min, max);
-
-        if (!int.TryParse(field.text, out int value))
-            value = fallback;
-
-        return Mathf.Clamp(value, min, max);
     }
 }
