@@ -12,25 +12,30 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1eeab403edf2ea541a333e18d65775b0, type: 3}
   m_Name: Request_FlatTop
   m_EditorClassIdentifier: Assembly-CSharp::ClientRequestData
-  id: 
-  requestId: 
-  requestName: 
+  id: flattop
+  requestId: flattop
+  requestName: FlatTop
   icon: {fileID: 0}
   description: 
   haircutType: 0
   serviceType: 0
   customServiceId: 
-  price: 30
+  additionalServiceTypes: 03000000
   servicePrice: 30
-  time: 10
   serviceTime: 10
-  serviceTimeMinutes: 10
   difficulty: 1
-  priceTable: {fileID: 0}
-  xpReward: 10
-  requiredItems: []
+  priceTable: {fileID: 11400000, guid: 24504ec38018014428d057cf832d353a, type: 2}
+  xpReward: 20
+  requiredItems:
+  - requirementId: 
+    displayName: "M\xE1quina de Corte"
+    category: 0
+    specificProductId: 
+    usageType: 0
+    hoursConsumed: 0
+    amountConsumed: 0
   beforeHairId: 
   afterHairId: 
   afroCutId: 
-  educationalTitle: 
-  educationalSummary: 
+  historyTitle: 
+  historySummary: 

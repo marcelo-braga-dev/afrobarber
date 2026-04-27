@@ -26,7 +26,7 @@ public class AppointmentItemUI : MonoBehaviour
             timeText.text = data.TimeText;
 
         if (clientText != null)
-            clientText.text = data.clientPrefab != null ? data.clientPrefab.name : "Cliente";
+            clientText.text = GetClientDisplayName(data);
 
         if (serviceText != null)
             serviceText.text = data.requestData != null ? data.requestData.RequestName : "Serviço";
@@ -36,6 +36,22 @@ public class AppointmentItemUI : MonoBehaviour
 
         if (statusIndicator != null)
             statusIndicator.color = GetStatusColor(data.status);
+    }
+
+    private string GetClientDisplayName(ClientAppointmentData data)
+    {
+        if (data == null || data.clientPrefab == null)
+            return "Cliente";
+
+        NPCIdentity identity = data.clientPrefab.GetComponent<NPCIdentity>();
+
+        if (identity == null)
+            return "Cliente";
+
+        if (string.IsNullOrWhiteSpace(identity.DisplayName))
+            return "Cliente";
+
+        return identity.DisplayName;
     }
 
     private string GetStatusText(ClientAppointmentStatus status)

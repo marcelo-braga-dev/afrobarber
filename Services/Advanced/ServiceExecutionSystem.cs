@@ -7,6 +7,7 @@ public class ServiceExecutionSystem : MonoBehaviour
 {
     [SerializeField] private bool useRealSecondsForDemo = true;
     [SerializeField] private float secondsPerGameMinute = 1f;
+    [SerializeField] private ServiceAudioController audioController;
 
     public event Action<ServiceActionExecutionResult> OnActionCompleted;
     public event Action<ServiceActionPlanStep, float> OnActionProgress;
@@ -14,6 +15,12 @@ public class ServiceExecutionSystem : MonoBehaviour
     private Coroutine routine;
 
     public bool IsRunning => routine != null;
+
+    private void Awake()
+    {
+        if (audioController == null)
+            audioController = GetComponent<ServiceAudioController>();
+    }
 
     public void StartExecution(ServicePlanData plan, ClientNPC client, Action<List<ServiceActionExecutionResult>, float> onFinish)
     {
@@ -32,6 +39,8 @@ public class ServiceExecutionSystem : MonoBehaviour
         {
             foreach (ServiceActionPlanStep step in plan.steps)
             {
+                audioController?.PlayStepAudio(step);
+
                 float gameMinutes = Mathf.Max(0.2f, step.estimatedMinutes);
                 float durationSeconds = useRealSecondsForDemo ? gameMinutes * Mathf.Max(0.1f, secondsPerGameMinute) : gameMinutes;
 
@@ -43,6 +52,8 @@ public class ServiceExecutionSystem : MonoBehaviour
                     OnActionProgress?.Invoke(step, progress);
                     yield return null;
                 }
+
+                audioController?.StopAudio();
 
                 float actualMinutes = gameMinutes;
                 totalMinutes += actualMinutes;

@@ -95,7 +95,7 @@ public class PlayerMoney : MonoBehaviour
             dividaAtualText.text = $"{moneyPrefix}{divida}";
 
             if (useDynamicColor)
-                dividaAtualText.color = divida > 0 ? negativeColor : positiveColor;
+                dividaAtualText.color =  negativeColor;
         }
     }
 

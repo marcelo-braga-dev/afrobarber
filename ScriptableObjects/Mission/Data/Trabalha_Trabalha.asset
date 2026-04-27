@@ -10,12 +10,12 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 0}
-  m_Name: Atendimentos
+  m_Name: Trabalha_Trabalha
   m_EditorClassIdentifier: Assembly-CSharp::MissionDefinition
-  missionId: 5b1b2ba5fe524c98a03a0bd6f9a66936
-  title: Super Requisitado
-  description: Conclua atendimentos para receber recompensas.
-  metricType: 0
+  missionId: 676032d072774293b19ac4da792d9dcc
+  title: Trabalha & Trabalha
+  description: Quanto mais trabalhar, maior a recompensa!
+  metricType: 2
   specificCutId: 
   scheduleType: 0
   isTemporary: 0
@@ -23,27 +23,27 @@ MonoBehaviour:
   startsAtIsoUtc: 
   endsAtIsoUtc: 
   tiers:
-  - targetValue: 3
-    tierLabel: Conclua 3 Atendimentos para receber $1000.
+  - targetValue: 60
+    tierLabel: Trabalhe por 60 minutos para ganhar recompensa!
+    rewards:
+    - rewardType: 0
+      moneyAmount: 800
+      xpAmount: 0
+      itemReward: {fileID: 0}
+      itemAmount: 0
+  - targetValue: 200
+    tierLabel: Trabalhe por 200 minutos para ganhar recompensa!
     rewards:
     - rewardType: 0
       moneyAmount: 1000
       xpAmount: 0
       itemReward: {fileID: 0}
       itemAmount: 0
-  - targetValue: 10
-    tierLabel: Conclua 10 Atendimentos para receber $3000.
+  - targetValue: 500
+    tierLabel: Trabalhe por 500 minutos para ganhar recompensa!
     rewards:
     - rewardType: 0
       moneyAmount: 3000
-      xpAmount: 0
-      itemReward: {fileID: 0}
-      itemAmount: 0
-  - targetValue: 50
-    tierLabel: Conclua 50 Atendimentos para receber $10000.
-    rewards:
-    - rewardType: 0
-      moneyAmount: 10000
       xpAmount: 0
       itemReward: {fileID: 0}
       itemAmount: 0
