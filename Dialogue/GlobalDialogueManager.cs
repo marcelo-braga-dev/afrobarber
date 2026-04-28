@@ -26,7 +26,7 @@ public class GlobalDialogueManager : MonoBehaviour
         }
 
         Instance = this;
-        DontDestroyOnLoad(gameObject);
+        PersistentGameObject.MakePersistent(gameObject);
     }
 
     public DialogueConversation StartConversation(DialogueContextType contextType, List<DialogueParticipant> participants)

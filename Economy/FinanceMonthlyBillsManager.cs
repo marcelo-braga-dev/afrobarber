@@ -29,7 +29,7 @@ public class FinanceMonthlyBillsManager : MonoBehaviour
         }
 
         Instance = this;
-        DontDestroyOnLoad(gameObject);
+        PersistentGameObject.MakePersistent(gameObject);
     }
 
     private void Start()

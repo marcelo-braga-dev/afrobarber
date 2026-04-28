@@ -36,7 +36,7 @@ public class ClientEvaluationSystem : MonoBehaviour
         }
 
         Instance = this;
-        DontDestroyOnLoad(gameObject);
+        PersistentGameObject.MakePersistent(gameObject);
     }
 
     public ServiceEvaluationResult EvaluateService(ServiceSessionData data)

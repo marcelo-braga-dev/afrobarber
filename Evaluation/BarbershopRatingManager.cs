@@ -38,7 +38,7 @@ public class BarbershopRatingManager : MonoBehaviour
         }
 
         Instance = this;
-        DontDestroyOnLoad(gameObject);
+        PersistentGameObject.MakePersistent(gameObject);
         Load();
 
         if (enableDebugLogs)

@@ -9,7 +9,7 @@ public class ProductDurabilitySystem : MonoBehaviour
         if (Instance == null)
         {
             Instance = this;
-            DontDestroyOnLoad(gameObject);
+            PersistentGameObject.MakePersistent(gameObject);
         }
         else
         {

@@ -95,7 +95,7 @@ public class PlayerEnergySystem : MonoBehaviour
         }
 
         Instance = this;
-        DontDestroyOnLoad(gameObject);
+        PersistentGameObject.MakePersistent(gameObject);
 
         currentEnergy = Mathf.Clamp(currentEnergy, minEnergy, maxEnergy);
         currentFatigue = Mathf.Clamp(currentFatigue, 0f, maxFatigue);

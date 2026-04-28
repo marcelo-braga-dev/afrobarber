@@ -30,7 +30,7 @@ public class GlobalReputationSystem : MonoBehaviour
         }
 
         Instance = this;
-        DontDestroyOnLoad(gameObject);
+        PersistentGameObject.MakePersistent(gameObject);
 
         LoadReputation();
         RecalculateReputation();

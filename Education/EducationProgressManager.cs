@@ -21,7 +21,7 @@ public class EducationProgressManager : MonoBehaviour
         }
 
         Instance = this;
-        DontDestroyOnLoad(gameObject);
+        PersistentGameObject.MakePersistent(gameObject);
         LoadProgress();
     }
 

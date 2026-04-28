@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using UnityEngine;
 
 public static class DefaultServiceLibrary
 {
@@ -6,184 +7,118 @@ public static class DefaultServiceLibrary
     {
         return new List<ClientRequestData>
         {
-            new ClientRequestData
-            {
-                id = "degrade_simples",
-                requestName = "Degradê Simples",
-                description = "Laterais baixas com transição suave.",
-                haircutType = HaircutType.Degrade,
-                serviceTime = 8f,
-                servicePrice = 25,
-                difficulty = 1,
-                requiredItems = new List<ServiceRequirementData>
+            CreateRequest(
+                "degrade_simples",
+                "Degradê Simples",
+                "Laterais baixas com transição suave.",
+                HaircutType.Degrade,
+                8f,
+                25,
+                1,
+                new List<ServiceRequirementData>
                 {
-                    new ServiceRequirementData
-                    {
-                        requirementId = "maq_corte",
-                        displayName = "Máquina de Corte",
-                        category = ProductCategory.MaquinaDeCorte,
-                        usageType = InventoryUsageType.PorHoraDeUso,
-                        hoursConsumed = 1
-                    },
-                    new ServiceRequirementData
-                    {
-                        requirementId = "pente",
-                        displayName = "Pente",
-                        category = ProductCategory.Pente,
-                        usageType = InventoryUsageType.PorHoraDeUso,
-                        hoursConsumed = 1
-                    },
-                    new ServiceRequirementData
-                    {
-                        requirementId = "navalha",
-                        displayName = "Navalha",
-                        category = ProductCategory.Navalha,
-                        usageType = InventoryUsageType.PorHoraDeUso,
-                        hoursConsumed = 1
-                    },
-                    new ServiceRequirementData
-                    {
-                        requirementId = "lamina",
-                        displayName = "Lâmina",
-                        specificProductId = "lamina_padrao",
-                        category = ProductCategory.Navalha,
-                        usageType = InventoryUsageType.PorServico,
-                        amountConsumed = 1
-                    }
-                }
-            },
+                    CreateRequirement("maq_corte", "Máquina de Corte", ProductCategory.MaquinaDeCorte, InventoryUsageType.PorHoraDeUso, 0, 1),
+                    CreateRequirement("pente", "Pente", ProductCategory.Pente, InventoryUsageType.PorHoraDeUso, 0, 1),
+                    CreateRequirement("navalha", "Navalha", ProductCategory.Navalha, InventoryUsageType.PorHoraDeUso, 0, 1),
+                    CreateRequirement("lamina", "Lâmina", ProductCategory.Navalha, InventoryUsageType.PorServico, 1, 0, "lamina_padrao")
+                }),
 
-            new ClientRequestData
-            {
-                id = "americano",
-                requestName = "Americano",
-                description = "Topo alto com laterais alinhadas.",
-                haircutType = HaircutType.Americano,
-                serviceTime = 10f,
-                servicePrice = 35,
-                difficulty = 2,
-                requiredItems = new List<ServiceRequirementData>
+            CreateRequest(
+                "americano",
+                "Americano",
+                "Topo alto com laterais alinhadas.",
+                HaircutType.Americano,
+                10f,
+                35,
+                2,
+                new List<ServiceRequirementData>
                 {
-                    new ServiceRequirementData
-                    {
-                        requirementId = "maq_corte",
-                        displayName = "Máquina de Corte",
-                        category = ProductCategory.MaquinaDeCorte,
-                        usageType = InventoryUsageType.PorHoraDeUso,
-                        hoursConsumed = 1
-                    },
-                    new ServiceRequirementData
-                    {
-                        requirementId = "tesoura",
-                        displayName = "Tesoura",
-                        category = ProductCategory.Tesoura,
-                        usageType = InventoryUsageType.PorHoraDeUso,
-                        hoursConsumed = 1
-                    },
-                    new ServiceRequirementData
-                    {
-                        requirementId = "pente",
-                        displayName = "Pente",
-                        category = ProductCategory.Pente,
-                        usageType = InventoryUsageType.PorHoraDeUso,
-                        hoursConsumed = 1
-                    }
-                }
-            },
+                    CreateRequirement("maq_corte", "Máquina de Corte", ProductCategory.MaquinaDeCorte, InventoryUsageType.PorHoraDeUso, 0, 1),
+                    CreateRequirement("tesoura", "Tesoura", ProductCategory.Tesoura, InventoryUsageType.PorHoraDeUso, 0, 1),
+                    CreateRequirement("pente", "Pente", ProductCategory.Pente, InventoryUsageType.PorHoraDeUso, 0, 1)
+                }),
 
-            new ClientRequestData
-            {
-                id = "black_power",
-                requestName = "Black Power Alinhado",
-                description = "Volume alinhado com acabamento detalhado.",
-                haircutType = HaircutType.BlackPower,
-                serviceTime = 12f,
-                servicePrice = 45,
-                difficulty = 3,
-                requiredItems = new List<ServiceRequirementData>
+            CreateRequest(
+                "black_power",
+                "Black Power Alinhado",
+                "Volume alinhado com acabamento detalhado.",
+                HaircutType.BlackPower,
+                12f,
+                45,
+                3,
+                new List<ServiceRequirementData>
                 {
-                    new ServiceRequirementData
-                    {
-                        requirementId = "tesoura",
-                        displayName = "Tesoura",
-                        category = ProductCategory.Tesoura,
-                        usageType = InventoryUsageType.PorHoraDeUso,
-                        hoursConsumed = 1
-                    },
-                    new ServiceRequirementData
-                    {
-                        requirementId = "maq_corte",
-                        displayName = "Máquina de Corte",
-                        category = ProductCategory.MaquinaDeCorte,
-                        usageType = InventoryUsageType.PorHoraDeUso,
-                        hoursConsumed = 1
-                    },
-                    new ServiceRequirementData
-                    {
-                        requirementId = "navalha",
-                        displayName = "Navalha",
-                        category = ProductCategory.Navalha,
-                        usageType = InventoryUsageType.PorHoraDeUso,
-                        hoursConsumed = 1
-                    },
-                    new ServiceRequirementData
-                    {
-                        requirementId = "lamina",
-                        displayName = "Lâmina",
-                        specificProductId = "lamina_padrao",
-                        category = ProductCategory.Navalha,
-                        usageType = InventoryUsageType.PorServico,
-                        amountConsumed = 1
-                    },
-                    new ServiceRequirementData
-                    {
-                        requirementId = "creme",
-                        displayName = "Creme",
-                        category = ProductCategory.ProdutoCapilar,
-                        usageType = InventoryUsageType.PorServico,
-                        amountConsumed = 2
-                    }
-                }
-            },
+                    CreateRequirement("tesoura", "Tesoura", ProductCategory.Tesoura, InventoryUsageType.PorHoraDeUso, 0, 1),
+                    CreateRequirement("maq_corte", "Máquina de Corte", ProductCategory.MaquinaDeCorte, InventoryUsageType.PorHoraDeUso, 0, 1),
+                    CreateRequirement("navalha", "Navalha", ProductCategory.Navalha, InventoryUsageType.PorHoraDeUso, 0, 1),
+                    CreateRequirement("lamina", "Lâmina", ProductCategory.Navalha, InventoryUsageType.PorServico, 1, 0, "lamina_padrao"),
+                    CreateRequirement("creme", "Creme", ProductCategory.ProdutoCapilar, InventoryUsageType.PorServico, 2)
+                }),
 
-            new ClientRequestData
-            {
-                id = "barba_completa",
-                requestName = "Barba Completa",
-                description = "Contorno e ajuste completo da barba.",
-                haircutType = HaircutType.RiscoNavalhado,
-                serviceTime = 7f,
-                servicePrice = 20,
-                difficulty = 1,
-                requiredItems = new List<ServiceRequirementData>
+            CreateRequest(
+                "barba_completa",
+                "Barba Completa",
+                "Contorno e ajuste completo da barba.",
+                HaircutType.RiscoNavalhado,
+                7f,
+                20,
+                1,
+                new List<ServiceRequirementData>
                 {
-                    new ServiceRequirementData
-                    {
-                        requirementId = "navalha",
-                        displayName = "Navalha",
-                        category = ProductCategory.Navalha,
-                        usageType = InventoryUsageType.PorHoraDeUso,
-                        hoursConsumed = 1
-                    },
-                    new ServiceRequirementData
-                    {
-                        requirementId = "lamina",
-                        displayName = "Lâmina",
-                        specificProductId = "lamina_padrao",
-                        category = ProductCategory.Navalha,
-                        usageType = InventoryUsageType.PorServico,
-                        amountConsumed = 1
-                    },
-                    new ServiceRequirementData
-                    {
-                        requirementId = "creme",
-                        displayName = "Creme",
-                        category = ProductCategory.ProdutoCapilar,
-                        usageType = InventoryUsageType.PorServico,
-                        amountConsumed = 1
-                    }
-                }
-            }
+                    CreateRequirement("navalha", "Navalha", ProductCategory.Navalha, InventoryUsageType.PorHoraDeUso, 0, 1),
+                    CreateRequirement("lamina", "Lâmina", ProductCategory.Navalha, InventoryUsageType.PorServico, 1, 0, "lamina_padrao"),
+                    CreateRequirement("creme", "Creme", ProductCategory.ProdutoCapilar, InventoryUsageType.PorServico, 1)
+                })
+        };
+    }
+
+    private static ClientRequestData CreateRequest(
+        string id,
+        string requestName,
+        string description,
+        HaircutType haircutType,
+        float serviceTime,
+        int servicePrice,
+        int difficulty,
+        List<ServiceRequirementData> requiredItems)
+    {
+        ClientRequestData request = ScriptableObject.CreateInstance<ClientRequestData>();
+
+        request.hideFlags = HideFlags.HideAndDontSave;
+
+        request.id = id;
+        request.requestId = id;
+        request.requestName = requestName;
+        request.description = description;
+        request.haircutType = haircutType;
+        request.serviceTime = serviceTime;
+        request.servicePrice = servicePrice;
+        request.difficulty = Mathf.Max(1, difficulty);
+        request.requiredItems = requiredItems ?? new List<ServiceRequirementData>();
+
+        request.SyncCompatibilityFields();
+
+        return request;
+    }
+
+    private static ServiceRequirementData CreateRequirement(
+        string requirementId,
+        string displayName,
+        ProductCategory category,
+        InventoryUsageType usageType,
+        int amountConsumed,
+        int hoursConsumed = 0,
+        string specificProductId = "")
+    {
+        return new ServiceRequirementData
+        {
+            requirementId = requirementId,
+            displayName = displayName,
+            category = category,
+            usageType = usageType,
+            amountConsumed = Mathf.Max(0, amountConsumed),
+            hoursConsumed = Mathf.Max(0, hoursConsumed),
+            specificProductId = specificProductId
         };
     }
 }

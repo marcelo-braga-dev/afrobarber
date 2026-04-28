@@ -21,7 +21,7 @@ public class BarberQueueSystem : MonoBehaviour
         }
 
         Instance = this;
-        DontDestroyOnLoad(gameObject);
+        PersistentGameObject.MakePersistent(gameObject);
     }
 
     public void AddClientToQueue(ClientNPC clientNPC, string clientName, float maxPatienceMinutes)

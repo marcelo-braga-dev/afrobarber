@@ -42,7 +42,7 @@ public class MissionSystem : MonoBehaviour
         if (OnMissionDataChanged == null)
             OnMissionDataChanged = new UnityEvent();
 
-        DontDestroyOnLoad(gameObject);
+        PersistentGameObject.MakePersistent(gameObject);
         Load();
         EnsureMissionIds();
         RebuildCutCounters();

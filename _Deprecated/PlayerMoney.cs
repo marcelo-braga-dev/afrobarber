@@ -41,7 +41,7 @@ public class PlayerMoney : MonoBehaviour
         if (Instance == null)
         {
             Instance = this;
-            DontDestroyOnLoad(gameObject);
+            PersistentGameObject.MakePersistent(gameObject);
         }
         else if (Instance != this)
         {

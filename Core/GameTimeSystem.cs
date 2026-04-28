@@ -137,7 +137,7 @@ public class GameTimeSystem : MonoBehaviour
         }
 
         Instance = this;
-        DontDestroyOnLoad(gameObject);
+        PersistentGameObject.MakePersistent(gameObject);
     }
 
     private void Start()

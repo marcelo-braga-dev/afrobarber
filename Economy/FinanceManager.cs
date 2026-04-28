@@ -41,7 +41,7 @@ public class FinanceManager : MonoBehaviour
         }
 
         Instance = this;
-        DontDestroyOnLoad(gameObject);
+        PersistentGameObject.MakePersistent(gameObject);
 
         TryMigrateLegacyCash();
         LoadCash();

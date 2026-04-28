@@ -22,7 +22,7 @@ public class ServiceHistorySystem : MonoBehaviour
         }
 
         Instance = this;
-        DontDestroyOnLoad(gameObject);
+        PersistentGameObject.MakePersistent(gameObject);
     }
 
     public void AddEntry(ServiceHistoryEntry entry)
