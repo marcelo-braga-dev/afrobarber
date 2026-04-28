@@ -13,20 +13,43 @@ public class QueueClientCardUI : MonoBehaviour
     [Header("UI Extra")]
     [SerializeField] private Slider patienceSlider;
 
+    [Header("Atualização")]
+    [SerializeField] private float refreshIntervalSeconds = 0.25f;
+
     private ClientQueueData currentData;
+    private ClientPatience cachedPatience;
+    private float refreshTimer;
 
     public void Setup(ClientQueueData data)
     {
         currentData = data;
+
+        cachedPatience = currentData != null && currentData.clientNPC != null
+            ? currentData.clientNPC.GetComponent<ClientPatience>()
+            : null;
+
+        if (patienceSlider != null)
+        {
+            patienceSlider.minValue = 0f;
+            patienceSlider.maxValue = 1f;
+        }
+
+        refreshTimer = 0f;
         Refresh();
     }
 
     private void Update()
     {
-        if (currentData != null)
-        {
-            Refresh();
-        }
+        if (currentData == null)
+            return;
+
+        refreshTimer += Time.deltaTime;
+
+        if (refreshTimer < refreshIntervalSeconds)
+            return;
+
+        refreshTimer = 0f;
+        Refresh();
     }
 
     private void Refresh()
@@ -37,23 +60,18 @@ public class QueueClientCardUI : MonoBehaviour
         float currentGameMinutes = 0f;
 
         if (BarberQueueSystem.Instance != null)
-        {
             currentGameMinutes = BarberQueueSystem.Instance.GetCurrentGameMinutes();
-        }
 
         float waitingMinutes = currentData.GetWaitingMinutes(currentGameMinutes);
         float patiencePercent = currentData.GetPatiencePercent(currentGameMinutes);
 
         ClientPatience.PatienceState state = ClientPatience.PatienceState.Calm;
 
-        if (currentData.clientNPC != null)
-        {
-            ClientPatience patience = currentData.clientNPC.GetComponent<ClientPatience>();
-            if (patience != null)
-            {
-                state = patience.EvaluateState(patiencePercent);
-            }
-        }
+        if (cachedPatience == null && currentData.clientNPC != null)
+            cachedPatience = currentData.clientNPC.GetComponent<ClientPatience>();
+
+        if (cachedPatience != null)
+            state = cachedPatience.EvaluateState(patiencePercent);
 
         if (clientNameText != null)
             clientNameText.text = currentData.clientName;
@@ -68,11 +86,7 @@ public class QueueClientCardUI : MonoBehaviour
             patienceStateText.text = "Estado: " + GetStateLabel(state);
 
         if (patienceSlider != null)
-        {
-            patienceSlider.minValue = 0f;
-            patienceSlider.maxValue = 1f;
             patienceSlider.value = patiencePercent;
-        }
     }
 
     private string FormatGameTime(float totalMinutes)
@@ -103,14 +117,19 @@ public class QueueClientCardUI : MonoBehaviour
         {
             case ClientPatience.PatienceState.Calm:
                 return "Calmo";
+
             case ClientPatience.PatienceState.Waiting:
                 return "Aguardando";
+
             case ClientPatience.PatienceState.Impatient:
                 return "Impaciente";
+
             case ClientPatience.PatienceState.Angry:
                 return "Irritado";
+
             case ClientPatience.PatienceState.LeavingSoon:
                 return "Quase indo embora";
+
             default:
                 return "Desconhecido";
         }

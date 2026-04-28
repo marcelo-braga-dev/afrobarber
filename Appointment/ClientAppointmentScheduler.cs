@@ -41,6 +41,8 @@ public class ClientAppointmentScheduler : MonoBehaviour
     private float nextGenerationMinute = -1f;
     private float processTimer;
 
+    private readonly Dictionary<GameObject, ClientAppointmentProfile> profileCache = new Dictionary<GameObject, ClientAppointmentProfile>();
+
     public IReadOnlyList<ClientAppointmentData> Appointments => appointments;
 
     public event Action OnAppointmentsChanged;
@@ -154,7 +156,7 @@ public class ClientAppointmentScheduler : MonoBehaviour
         if (appointment == null || appointment.clientPrefab == null)
             return;
 
-        ClientAppointmentProfile profile = appointment.clientPrefab.GetComponent<ClientAppointmentProfile>();
+        ClientAppointmentProfile profile = GetCachedProfile(appointment.clientPrefab);
 
         string clientName = appointment.clientPrefab.name;
         string message;
@@ -208,10 +210,8 @@ public class ClientAppointmentScheduler : MonoBehaviour
         if (delay >= 15f && !appointment.warningMessageSent)
         {
             appointment.warningMessageSent = true;
-
-            ClientAppointmentProfile profile = appointment.clientPrefab != null
-                ? appointment.clientPrefab.GetComponent<ClientAppointmentProfile>()
-                : null;
+            
+            ClientAppointmentProfile profile = GetCachedProfile(appointment.clientPrefab);
 
             string message = profile != null
                 ? profile.cascadeDelayMessage
@@ -228,13 +228,25 @@ public class ClientAppointmentScheduler : MonoBehaviour
 
     private float EstimateWalkTimeMinutes(GameObject prefab)
     {
-        ClientAppointmentProfile profile = prefab != null
-            ? prefab.GetComponent<ClientAppointmentProfile>()
-            : null;
+        ClientAppointmentProfile profile = GetCachedProfile(prefab);
 
         float speed = profile != null ? profile.averageWalkSpeed : 2.5f;
 
         return Mathf.Clamp(6f / speed, 1f, 15f);
+    }
+
+    private ClientAppointmentProfile GetCachedProfile(GameObject prefab)
+    {
+        if (prefab == null)
+            return null;
+
+        if (profileCache.TryGetValue(prefab, out ClientAppointmentProfile cached))
+            return cached;
+
+        ClientAppointmentProfile profile = prefab.GetComponent<ClientAppointmentProfile>();
+        profileCache[prefab] = profile;
+
+        return profile;
     }
 
     private void TryGenerateAppointment()

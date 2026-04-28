@@ -114,13 +114,10 @@ public class BarbershopServiceManager : MonoBehaviour
         }
 
         ClientRequestData request = client.RequestData;
-
         PreparedServiceLoadout loadout = client.PreparedLoadout;
 
         if (loadout == null || !ServiceLoadoutBuilder.IsLoadoutComplete(request, loadout))
-        {
             loadout = PrepareLoadoutForClient(request);
-        }
 
         if (!ServiceLoadoutBuilder.IsLoadoutComplete(request, loadout))
         {
@@ -189,9 +186,7 @@ public class BarbershopServiceManager : MonoBehaviour
             yield break;
 
         if (client.CurrentState != ClientNPC.ClientState.InService)
-        {
             Debug.LogWarning("[BarbershopServiceManager] Cliente não chegou ao estado InService dentro do tempo esperado.");
-        }
 
         if (useAdvancedServiceWorkflow && openPlanningUIBeforeAdvancedExecution)
         {
@@ -284,9 +279,7 @@ public class BarbershopServiceManager : MonoBehaviour
         bool opened = TryOpenServicePlanningUI(currentClient);
 
         if (!opened)
-        {
             Debug.LogWarning("[BarbershopServiceManager] Não foi possível abrir o planejamento. Verifique se o player está perto da cadeira e se o cliente está sentado.");
-        }
     }
 
     public bool CanOpenPlanningForCurrentClient()
@@ -399,9 +392,7 @@ public class BarbershopServiceManager : MonoBehaviour
         }
 
         if (advancedWorkflow == null)
-        {
             advancedWorkflow = FindFirstObjectByType<AdvancedServiceWorkflowManager>();
-        }
 
         if (advancedWorkflow == null)
         {
@@ -573,22 +564,14 @@ public class BarbershopServiceManager : MonoBehaviour
             FindFirstObjectByType<ServiceEvaluationUI>(FindObjectsInactive.Include);
 
         if (evaluationUI != null && result != null)
-        {
             evaluationUI.ShowAdvanced(result);
-        }
         else
-        {
             Debug.LogWarning("[BarbershopServiceManager] ServiceEvaluationUI não encontrada ou resultado avançado nulo.");
-        }
 
         if (completeClientVisualFlowAfterAdvancedService)
-        {
             CompleteCurrentServiceAfterAdvancedReward();
-        }
         else
-        {
             SendCurrentClientToExitOrCashier();
-        }
     }
 
     private void CompleteCurrentServiceAfterAdvancedReward()
@@ -656,25 +639,17 @@ public class BarbershopServiceManager : MonoBehaviour
         waitingForPlayerToOpenPlanning = false;
 
         if (BarberQueueSystem.Instance != null)
-        {
             BarberQueueSystem.Instance.RemoveClientFromQueue(client);
-        }
 
         currentClient = null;
 
         if (exitPoint != null)
-        {
             client.LeaveShop(exitPoint);
-        }
         else
-        {
             client.ForceDespawn();
-        }
 
         if (enableDebugLogs)
-        {
             Debug.Log($"[BarbershopServiceManager] Cliente {client.name} foi dispensado pelo jogador.");
-        }
     }
 
     private PreparedServiceLoadout PrepareLoadoutForClient(ClientRequestData request)
@@ -1085,27 +1060,31 @@ public class BarbershopServiceManager : MonoBehaviour
         float rating = 3f;
 
         if (evaluationResult != null)
-        {
             rating = evaluationResult.finalScore;
-        }
         else
-        {
             rating = (equipmentQuality + productQuality + defaultEnvironmentComfortScore) / 3f;
-        }
 
         BarbershopRatingManager.Instance.AddReview(rating);
     }
 
     public bool CallNextClientFromQueue()
     {
+        if (BarberQueueSystem.Instance != null &&
+            BarberQueueSystem.Instance.TryGetNextWaitingClient(out ClientNPC queuedClient) &&
+            queuedClient != null)
+        {
+            Debug.Log("[BarbershopServiceManager] Chamando próximo cliente da fila: " + queuedClient.name);
+            queuedClient.CallForService();
+            return true;
+        }
+
         ClientNPC[] clients = FindObjectsByType<ClientNPC>(FindObjectsSortMode.None);
 
-        foreach (ClientNPC client in clients)
+        for (int i = 0; i < clients.Length; i++)
         {
-            if (client == null)
-                continue;
+            ClientNPC client = clients[i];
 
-            if (!client.IsWaitingForService)
+            if (client == null || !client.IsWaitingForService)
                 continue;
 
             Debug.Log("[BarbershopServiceManager] Chamando próximo cliente da fila: " + client.name);

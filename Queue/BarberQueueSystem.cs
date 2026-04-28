@@ -101,6 +101,24 @@ public class BarberQueueSystem : MonoBehaviour
         return count;
     }
 
+    public bool TryGetNextWaitingClient(out ClientNPC clientNPC)
+    {
+        clientNPC = null;
+
+        for (int i = 0; i < waitingClients.Count; i++)
+        {
+            ClientQueueData data = waitingClients[i];
+
+            if (data == null || data.clientNPC == null || data.isBeingServed)
+                continue;
+
+            clientNPC = data.clientNPC;
+            return true;
+        }
+
+        return false;
+    }
+
     public List<ClientQueueData> GetQueueOrderedByArrival()
     {
         List<ClientQueueData> ordered = new List<ClientQueueData>(waitingClients);
