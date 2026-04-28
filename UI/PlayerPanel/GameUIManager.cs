@@ -1,5 +1,4 @@
 using UnityEngine;
-using UnityEngine.InputSystem;
 
 public class GameUIManager : MonoBehaviour
 {
@@ -19,11 +18,15 @@ public class GameUIManager : MonoBehaviour
     [SerializeField] private GameObject uiReputacaoDetalhada;
     [SerializeField] private GameObject uiMissoes;
 
-    [Header("Configuração")]
+    [Header("Configuracao")]
     [SerializeField] private bool notificationCanStayWithOtherUI = false;
 
-    [Header("Input")]
-    [SerializeField] private Key closeAllKey = Key.Escape;
+    [Header("Referencias de Refresh (cache)")]
+    [SerializeField] private ShopManager shopManager;
+    [SerializeField] private QueueUIManager queueUIManager;
+    [SerializeField] private AppointmentPanelUI appointmentPanelUI;
+    [SerializeField] private ServiceHistoryUI serviceHistoryUI;
+    [SerializeField] private MissionsPanelUI missionsPanelUI;
 
     private GameObject currentOpenUI;
 
@@ -44,7 +47,7 @@ public class GameUIManager : MonoBehaviour
 
     private void Update()
     {
-        if (Keyboard.current != null && Keyboard.current[closeAllKey].wasPressedThisFrame)
+        if (Input.GetKeyDown(KeyCode.Escape))
             HideAll();
     }
 
@@ -80,11 +83,7 @@ public class GameUIManager : MonoBehaviour
         ToggleExclusiveUI(uiLoja);
 
         if (willOpen)
-        {
-            ShopManager shop = FindFirstObjectByType<ShopManager>();
-            if (shop != null)
-                shop.RefreshShopUI();
-        }
+            GetShopManager()?.RefreshShopUI();
     }
 
     public void OpenAtendimento()
@@ -99,11 +98,7 @@ public class GameUIManager : MonoBehaviour
         ToggleExclusiveUI(uiFila);
 
         if (willOpen)
-        {
-            QueueUIManager queueUI = FindFirstObjectByType<QueueUIManager>();
-            if (queueUI != null)
-                queueUI.RefreshQueueUI();
-        }
+            GetQueueUIManager()?.RefreshQueueUI();
     }
 
     public void OpenAgenda()
@@ -113,11 +108,7 @@ public class GameUIManager : MonoBehaviour
         ToggleExclusiveUI(uiAgenda);
 
         if (willOpen)
-        {
-            AppointmentPanelUI agendaUI = FindFirstObjectByType<AppointmentPanelUI>();
-            if (agendaUI != null)
-                agendaUI.Refresh();
-        }
+            GetAppointmentPanelUI()?.Refresh();
     }
 
     public void OpenHistoricoAtendimento()
@@ -127,11 +118,7 @@ public class GameUIManager : MonoBehaviour
         ToggleExclusiveUI(uiHistoricoAtendimento);
 
         if (willOpen)
-        {
-            ServiceHistoryUI historyUI = FindFirstObjectByType<ServiceHistoryUI>();
-            if (historyUI != null)
-                historyUI.RefreshHistoryUI();
-        }
+            GetServiceHistoryUI()?.RefreshHistoryUI();
     }
 
     public void OpenAvaliacaoAtendimento()
@@ -162,11 +149,7 @@ public class GameUIManager : MonoBehaviour
         ToggleExclusiveUI(uiMissoes);
 
         if (willOpen)
-        {
-            MissionsPanelUI missionsUI = FindFirstObjectByType<MissionsPanelUI>();
-            if (missionsUI != null)
-                missionsUI.Refresh();
-        }
+            GetMissionsPanelUI()?.Refresh();
     }
 
     public void CloseMissoes() => CloseUI(uiMissoes);
@@ -271,6 +254,46 @@ public class GameUIManager : MonoBehaviour
             IsUIOpen(uiReputacaoDetalhada) ||
             IsUIOpen(uiMissoes) ||
             (!notificationCanStayWithOtherUI && IsUIOpen(uiNotificacao));
+    }
+
+    private ShopManager GetShopManager()
+    {
+        if (shopManager == null)
+            shopManager = FindFirstObjectByType<ShopManager>();
+
+        return shopManager;
+    }
+
+    private QueueUIManager GetQueueUIManager()
+    {
+        if (queueUIManager == null)
+            queueUIManager = FindFirstObjectByType<QueueUIManager>();
+
+        return queueUIManager;
+    }
+
+    private AppointmentPanelUI GetAppointmentPanelUI()
+    {
+        if (appointmentPanelUI == null)
+            appointmentPanelUI = FindFirstObjectByType<AppointmentPanelUI>();
+
+        return appointmentPanelUI;
+    }
+
+    private ServiceHistoryUI GetServiceHistoryUI()
+    {
+        if (serviceHistoryUI == null)
+            serviceHistoryUI = FindFirstObjectByType<ServiceHistoryUI>();
+
+        return serviceHistoryUI;
+    }
+
+    private MissionsPanelUI GetMissionsPanelUI()
+    {
+        if (missionsPanelUI == null)
+            missionsPanelUI = FindFirstObjectByType<MissionsPanelUI>();
+
+        return missionsPanelUI;
     }
 
     private bool IsUIOpen(GameObject ui)
