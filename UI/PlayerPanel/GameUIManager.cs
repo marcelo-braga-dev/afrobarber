@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 public class GameUIManager : MonoBehaviour
 {
@@ -21,6 +22,9 @@ public class GameUIManager : MonoBehaviour
     [Header("Configuração")]
     [SerializeField] private bool notificationCanStayWithOtherUI = false;
 
+    [Header("Input")]
+    [SerializeField] private Key closeAllKey = Key.Escape;
+
     private GameObject currentOpenUI;
 
     public GameObject CurrentOpenUI => currentOpenUI;
@@ -40,7 +44,7 @@ public class GameUIManager : MonoBehaviour
 
     private void Update()
     {
-        if (Input.GetKeyDown(KeyCode.Escape))
+        if (Keyboard.current != null && Keyboard.current[closeAllKey].wasPressedThisFrame)
             HideAll();
     }
 

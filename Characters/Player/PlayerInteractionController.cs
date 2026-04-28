@@ -1,13 +1,19 @@
 using UnityEngine;
 using UnityEngine.EventSystems;
+using UnityEngine.InputSystem;
+using UnityEngine.InputSystem.Controls;
 
 public class PlayerInteractionController : MonoBehaviour
 {
     [SerializeField] private Camera mainCamera;
     [SerializeField] private float interactDistance = 10f;
-    [SerializeField] private KeyCode interactKey = KeyCode.E;
     [SerializeField] private LayerMask interactionLayerMask = ~0;
     [SerializeField] private bool enableDebugLogs = true;
+
+    [Header("Entrada")]
+    [SerializeField] private Key interactKey = Key.E;
+    [SerializeField] private bool allowMouseClick = true;
+    [SerializeField] private bool allowTouch = true;
 
     [Header("Bloqueio por UI")]
     [SerializeField] private bool blockWhenAnyBlockingPanelIsOpen = true;
@@ -18,15 +24,49 @@ public class PlayerInteractionController : MonoBehaviour
     [Header("Bloqueio por clique em UI")]
     [SerializeField] private bool blockPointerOverUIOnlyWhenPanelIsOpen = true;
 
+    private Vector2 lastPointerPosition;
+
     private void Update()
     {
-        if (Input.GetMouseButtonDown(0) || Input.GetKeyDown(interactKey))
-            TryInteract();
+        bool interactionRequested = false;
+
+        if (Keyboard.current != null && Keyboard.current[interactKey].wasPressedThisFrame)
+        {
+            interactionRequested = true;
+            lastPointerPosition = GetScreenCenter();
+        }
+
+        if (allowMouseClick && Mouse.current != null && Mouse.current.leftButton.wasPressedThisFrame)
+        {
+            interactionRequested = true;
+            lastPointerPosition = Mouse.current.position.ReadValue();
+        }
+
+        if (allowTouch && Touchscreen.current != null)
+        {
+            foreach (TouchControl touch in Touchscreen.current.touches)
+            {
+                if (touch.press.wasPressedThisFrame)
+                {
+                    interactionRequested = true;
+                    lastPointerPosition = touch.position.ReadValue();
+                    break;
+                }
+            }
+        }
+
+        if (interactionRequested)
+            TryInteract(lastPointerPosition);
     }
 
     public void TryInteract()
     {
-        if (ShouldBlockInteraction())
+        TryInteract(GetCurrentPointerPosition());
+    }
+
+    public void TryInteract(Vector2 screenPosition)
+    {
+        if (ShouldBlockInteraction(screenPosition))
             return;
 
         if (mainCamera == null)
@@ -38,7 +78,7 @@ public class PlayerInteractionController : MonoBehaviour
             return;
         }
 
-        Ray ray = mainCamera.ScreenPointToRay(Input.mousePosition);
+        Ray ray = mainCamera.ScreenPointToRay(screenPosition);
 
         if (Physics.Raycast(ray, out RaycastHit hit, interactDistance, interactionLayerMask))
         {
@@ -66,7 +106,7 @@ public class PlayerInteractionController : MonoBehaviour
         }
     }
 
-    private bool ShouldBlockInteraction()
+    private bool ShouldBlockInteraction(Vector2 screenPosition)
     {
         bool hasBlockingPanelOpen = IsAnyBlockingUIPanelOpen();
 
@@ -78,7 +118,7 @@ public class PlayerInteractionController : MonoBehaviour
             return true;
         }
 
-        if (blockPointerOverUIOnlyWhenPanelIsOpen && hasBlockingPanelOpen && IsPointerOverUI())
+        if (blockPointerOverUIOnlyWhenPanelIsOpen && hasBlockingPanelOpen && IsPointerOverUI(screenPosition))
         {
             if (enableDebugLogs)
                 Debug.Log("[PlayerInteractionController] Interação bloqueada: ponteiro está sobre UI bloqueante.");
@@ -89,17 +129,20 @@ public class PlayerInteractionController : MonoBehaviour
         return false;
     }
 
-    private bool IsPointerOverUI()
+    private bool IsPointerOverUI(Vector2 screenPosition)
     {
         if (EventSystem.current == null)
             return false;
 
-#if UNITY_ANDROID || UNITY_IOS
-        if (Input.touchCount > 0)
-            return EventSystem.current.IsPointerOverGameObject(Input.GetTouch(0).fingerId);
-#endif
+        PointerEventData pointerData = new PointerEventData(EventSystem.current)
+        {
+            position = screenPosition
+        };
 
-        return EventSystem.current.IsPointerOverGameObject();
+        var results = new System.Collections.Generic.List<RaycastResult>();
+        EventSystem.current.RaycastAll(pointerData, results);
+
+        return results.Count > 0;
     }
 
     private bool IsAnyBlockingUIPanelOpen()
@@ -116,5 +159,27 @@ public class PlayerInteractionController : MonoBehaviour
         }
 
         return false;
+    }
+
+    private Vector2 GetCurrentPointerPosition()
+    {
+        if (Mouse.current != null)
+            return Mouse.current.position.ReadValue();
+
+        if (Touchscreen.current != null)
+        {
+            foreach (TouchControl touch in Touchscreen.current.touches)
+            {
+                if (touch.press.isPressed)
+                    return touch.position.ReadValue();
+            }
+        }
+
+        return GetScreenCenter();
+    }
+
+    private Vector2 GetScreenCenter()
+    {
+        return new Vector2(Screen.width * 0.5f, Screen.height * 0.5f);
     }
 }
