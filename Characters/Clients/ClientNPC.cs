@@ -27,9 +27,18 @@ public class ClientNPC : MonoBehaviour
 
     [Header("Configuração")]
     [SerializeField] private string clientDisplayName = "Cliente";
-    [SerializeField] private float arrivalDistance = 0.35f;
+    [SerializeField] private float arrivalDistance = 0.85f;
     [SerializeField] private float cashierWaitTime = 2f;
     [SerializeField] private float maxPatienceMinutes = 90f;
+
+    [Header("Anti-travamento / NavMesh")]
+    [SerializeField] private float navMeshSampleRadius = 2f;
+    [SerializeField] private float stuckCheckInterval = 0.5f;
+    [SerializeField] private float stuckVelocityThreshold = 0.05f;
+    [SerializeField] private float maxStuckTime = 3f;
+    [SerializeField] private float forceArrivalDistance = 1.25f;
+    [SerializeField] private bool autoAdvanceIfStuckNearTarget = true;
+    [SerializeField] private bool repathWhenStuck = true;
 
     [Header("Ajuste de assento")]
     [SerializeField] private bool snapToSeatOnArrival = true;
@@ -64,13 +73,15 @@ public class ClientNPC : MonoBehaviour
 
     private PreparedServiceLoadout preparedLoadout;
 
+    private float stuckTimer;
+    private float stuckCheckTimer;
+    private Vector3 lastDestination;
+
     public string ClientDisplayName => clientDisplayName;
     public ClientRequestData CurrentRequest => currentRequest;
     public ClientRequestData RequestData => currentRequest;
     public ClientState CurrentState => currentState;
-
     public bool IsWaitingForService => currentState == ClientState.WaitingForService;
-
     public GameObject SourcePrefab => sourcePrefab;
     public ClientServiceProfile ServiceProfile => serviceProfile;
     public PreparedServiceLoadout PreparedLoadout => preparedLoadout;
@@ -88,6 +99,7 @@ public class ClientNPC : MonoBehaviour
         if (hairVisualController == null)
             hairVisualController = GetComponentInChildren<ClientHairVisualController>(true);
 
+        ConfigureAgent();
         HideInteractionIcon();
     }
 
@@ -102,7 +114,23 @@ public class ClientNPC : MonoBehaviour
             return;
 
         if (HasReachedDestination())
+        {
             HandleReachedDestination();
+            return;
+        }
+
+        UpdateStuckDetection();
+    }
+
+    private void ConfigureAgent()
+    {
+        if (agent == null)
+            return;
+
+        agent.stoppingDistance = Mathf.Max(agent.stoppingDistance, 0.35f);
+        agent.autoBraking = true;
+        agent.updatePosition = true;
+        agent.updateRotation = true;
     }
 
     public void SetPlayerTransform(Transform player)
@@ -156,6 +184,8 @@ public class ClientNPC : MonoBehaviour
         addedToQueue = false;
         preparedLoadout = null;
 
+        WarpToNavMeshIfNeeded();
+
         if (enableDebugLogs)
             Debug.Log($"[{name}] Inicializado. Request atual: {(currentRequest != null ? currentRequest.RequestName : "NULL")}");
 
@@ -201,10 +231,7 @@ public class ClientNPC : MonoBehaviour
 
     public void ApplyFinalHair()
     {
-        if (finalHairApplied)
-            return;
-
-        if (hairVisualController == null)
+        if (finalHairApplied || hairVisualController == null)
             return;
 
         if (currentRequest != null && !string.IsNullOrWhiteSpace(currentRequest.afterHairId))
@@ -223,10 +250,7 @@ public class ClientNPC : MonoBehaviour
 
     public AfroCutInfo GetCurrentCutInfo()
     {
-        if (currentRequest == null)
-            return null;
-
-        if (EducationProgressManager.Instance == null)
+        if (currentRequest == null || EducationProgressManager.Instance == null)
             return null;
 
         return EducationProgressManager.Instance.GetCutById(currentRequest.afroCutId);
@@ -283,7 +307,6 @@ public class ClientNPC : MonoBehaviour
     {
         barberChairWalkPoint = walkPoint;
         barberChairSitPoint = sitPoint != null ? sitPoint : walkPoint;
-
         BeginService(barberChairWalkPoint);
     }
 
@@ -305,8 +328,8 @@ public class ClientNPC : MonoBehaviour
         SetSit(false);
 
         currentTarget = barberChairWalkPoint;
-        SetDestination(barberChairWalkPoint.position);
         currentState = ClientState.GoingToBarberChair;
+        SetDestination(barberChairWalkPoint.position);
 
         if (enableDebugLogs)
             Debug.Log($"[{name}] Indo para cadeira de barbeiro.");
@@ -343,8 +366,8 @@ public class ClientNPC : MonoBehaviour
         SetSit(false);
 
         currentTarget = cashierPoint;
-        SetDestination(cashierPoint.position);
         currentState = ClientState.GoingToCashier;
+        SetDestination(cashierPoint.position);
     }
 
     public void LeaveShop(Transform customExitPoint = null)
@@ -364,8 +387,8 @@ public class ClientNPC : MonoBehaviour
         SetSit(false);
 
         currentTarget = targetExit;
-        SetDestination(targetExit.position);
         currentState = ClientState.Leaving;
+        SetDestination(targetExit.position);
     }
 
     public void LeaveDueToClosingTime()
@@ -388,8 +411,11 @@ public class ClientNPC : MonoBehaviour
         SetSit(false);
 
         currentTarget = entrancePoint;
-        SetDestination(entrancePoint.position);
         currentState = ClientState.GoingToEntrance;
+        SetDestination(entrancePoint.position);
+
+        if (enableDebugLogs)
+            Debug.Log($"[{name}] Indo para EntrancePoint.");
     }
 
     private void GoToWaitingPoint()
@@ -407,8 +433,8 @@ public class ClientNPC : MonoBehaviour
         SetSit(false);
 
         currentTarget = waitingApproachPoint;
-        SetDestination(waitingApproachPoint.position);
         currentState = ClientState.GoingToWaitingPoint;
+        SetDestination(waitingApproachPoint.position);
 
         if (enableDebugLogs)
             Debug.Log($"[{name}] Indo para assento de espera.");
@@ -468,6 +494,10 @@ public class ClientNPC : MonoBehaviour
     private void ArriveAtEntrance()
     {
         StopAgent();
+
+        if (enableDebugLogs)
+            Debug.Log($"[{name}] Chegou ao EntrancePoint. Indo para espera.");
+
         GoToWaitingPoint();
     }
 
@@ -546,10 +576,7 @@ public class ClientNPC : MonoBehaviour
 
     private void AddToQueue()
     {
-        if (addedToQueue)
-            return;
-
-        if (BarberQueueSystem.Instance == null)
+        if (addedToQueue || BarberQueueSystem.Instance == null)
             return;
 
         BarberQueueSystem.Instance.AddClientToQueue(this, clientDisplayName, maxPatienceMinutes);
@@ -578,8 +605,18 @@ public class ClientNPC : MonoBehaviour
         if (agent == null || !agent.enabled)
             return;
 
+        Vector3 finalPosition = position;
+
+        if (NavMesh.SamplePosition(position, out NavMeshHit hit, navMeshSampleRadius, NavMesh.AllAreas))
+            finalPosition = hit.position;
+        else if (enableDebugLogs)
+            Debug.LogWarning($"[{name}] Destino fora do NavMesh. Usando posição original: {position}");
+
+        lastDestination = finalPosition;
+        ResetStuckDetection();
+
         agent.isStopped = false;
-        agent.SetDestination(position);
+        agent.SetDestination(finalPosition);
     }
 
     private void StopAgent()
@@ -590,6 +627,7 @@ public class ClientNPC : MonoBehaviour
         agent.isStopped = true;
         agent.ResetPath();
         currentTarget = null;
+        ResetStuckDetection();
     }
 
     private bool HasReachedDestination()
@@ -600,13 +638,93 @@ public class ClientNPC : MonoBehaviour
         if (agent.pathPending)
             return false;
 
-        if (agent.remainingDistance > arrivalDistance)
-            return false;
+        float safeArrivalDistance = Mathf.Max(arrivalDistance, agent.stoppingDistance + 0.2f);
 
-        if (agent.hasPath && agent.velocity.sqrMagnitude > 0.01f)
-            return false;
+        if (agent.remainingDistance <= safeArrivalDistance)
+        {
+            if (!agent.hasPath || agent.velocity.sqrMagnitude <= 0.05f)
+                return true;
+        }
 
-        return true;
+        if (currentTarget != null)
+        {
+            float directDistance = Vector3.Distance(transform.position, currentTarget.position);
+
+            if (directDistance <= forceArrivalDistance)
+                return true;
+        }
+
+        return false;
+    }
+
+    private void UpdateStuckDetection()
+    {
+        if (agent == null || !agent.enabled || currentTarget == null)
+            return;
+
+        stuckCheckTimer += Time.deltaTime;
+
+        if (stuckCheckTimer < stuckCheckInterval)
+            return;
+
+        stuckCheckTimer = 0f;
+
+        bool movingTooSlow = agent.velocity.magnitude <= stuckVelocityThreshold;
+        bool stillHasDestination = agent.hasPath || agent.pathPending;
+        bool closeToTarget = Vector3.Distance(transform.position, currentTarget.position) <= forceArrivalDistance;
+
+        if (movingTooSlow && stillHasDestination)
+            stuckTimer += stuckCheckInterval;
+        else
+            stuckTimer = 0f;
+
+        if (stuckTimer < maxStuckTime)
+            return;
+
+        if (autoAdvanceIfStuckNearTarget && closeToTarget)
+        {
+            if (enableDebugLogs)
+                Debug.LogWarning($"[{name}] Travado próximo ao destino no estado {currentState}. Forçando chegada.");
+
+            HandleReachedDestination();
+            return;
+        }
+
+        if (repathWhenStuck)
+        {
+            if (enableDebugLogs)
+                Debug.LogWarning($"[{name}] Possível travamento no estado {currentState}. Recalculando rota.");
+
+            stuckTimer = 0f;
+            SetDestination(lastDestination);
+        }
+    }
+
+    private void ResetStuckDetection()
+    {
+        stuckTimer = 0f;
+        stuckCheckTimer = 0f;
+    }
+
+    private void WarpToNavMeshIfNeeded()
+    {
+        if (agent == null || !agent.enabled)
+            return;
+
+        if (agent.isOnNavMesh)
+            return;
+
+        if (NavMesh.SamplePosition(transform.position, out NavMeshHit hit, navMeshSampleRadius, NavMesh.AllAreas))
+        {
+            agent.Warp(hit.position);
+
+            if (enableDebugLogs)
+                Debug.Log($"[{name}] Reposicionado no NavMesh ao inicializar.");
+        }
+        else
+        {
+            Debug.LogWarning($"[{name}] Não está sobre o NavMesh e não encontrou ponto próximo.");
+        }
     }
 
     private void UpdateAnimator()

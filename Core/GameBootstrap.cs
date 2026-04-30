@@ -9,7 +9,8 @@ public class GameBootstrap : MonoBehaviour
     [Header("Tela de Loading Inicial")]
     [SerializeField] private GameObject loadingScreen;
     [SerializeField] private CanvasGroup loadingCanvasGroup;
-    [SerializeField] private float loadingFadeOutDuration = 0.4f;
+    [SerializeField] private bool forceLoadingScreenOnStart = true;
+    [SerializeField] private float loadingFadeOutDuration = 1f;
 
     [Header("Sistemas principais")]
     [SerializeField] private GlobalDialogueManager globalDialogueManager;
@@ -58,7 +59,8 @@ public class GameBootstrap : MonoBehaviour
     {
         SetupSingleton();
 
-        ShowLoadingScreenImmediate();
+        if (forceLoadingScreenOnStart)
+            ShowLoadingScreenImmediate();
 
         ConfigureMobilePerformance();
         BuildCoreObjectsCache();
@@ -72,18 +74,18 @@ public class GameBootstrap : MonoBehaviour
         FindMissingReferences();
     }
 
-    private void OnDestroy()
-    {
-        if (Instance == this)
-            Instance = null;
-    }
-
     private void Start()
     {
         if (bootstrapRoutine != null)
             StopCoroutine(bootstrapRoutine);
 
         bootstrapRoutine = StartCoroutine(BootstrapRoutine());
+    }
+
+    private void OnDestroy()
+    {
+        if (Instance == this)
+            Instance = null;
     }
 
     private void SetupSingleton()
@@ -99,6 +101,9 @@ public class GameBootstrap : MonoBehaviour
 
     private IEnumerator BootstrapRoutine()
     {
+        if (forceLoadingScreenOnStart)
+            ShowLoadingScreenImmediate();
+
         IsReady = false;
         IsBootstrapping = true;
         Progress01 = 0f;
@@ -153,7 +158,7 @@ public class GameBootstrap : MonoBehaviour
         {
             loadingCanvasGroup.alpha = 1f;
             loadingCanvasGroup.blocksRaycasts = true;
-            loadingCanvasGroup.interactable = true;
+            loadingCanvasGroup.interactable = false;
         }
     }
 
@@ -169,18 +174,24 @@ public class GameBootstrap : MonoBehaviour
         }
 
         float elapsed = 0f;
+
+        loadingCanvasGroup.alpha = 1f;
         loadingCanvasGroup.blocksRaycasts = true;
         loadingCanvasGroup.interactable = false;
 
         while (elapsed < loadingFadeOutDuration)
         {
             elapsed += Time.unscaledDeltaTime;
-            loadingCanvasGroup.alpha = Mathf.Lerp(1f, 0f, elapsed / loadingFadeOutDuration);
+
+            float progress = Mathf.Clamp01(elapsed / loadingFadeOutDuration);
+            loadingCanvasGroup.alpha = Mathf.Lerp(1f, 0f, progress);
+
             yield return null;
         }
 
         loadingCanvasGroup.alpha = 0f;
         loadingCanvasGroup.blocksRaycasts = false;
+        loadingCanvasGroup.interactable = false;
         loadingScreen.SetActive(false);
     }
 
