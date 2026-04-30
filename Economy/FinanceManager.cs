@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using TMPro;
 using UnityEngine;
 
 public class FinanceManager : MonoBehaviour
@@ -18,6 +19,16 @@ public class FinanceManager : MonoBehaviour
     [SerializeField] private string legacyPlayerMoneyKey = "AFROBARBER_PLAYER_MONEY";
     [SerializeField] private string legacyCashRegisterKey = "AFROBARBER_CASH_REGISTER_MONEY";
     [SerializeField] private string legacyMigrationDoneKey = "AFROBARBER_FINANCE_MIGRATION_V2_DONE";
+
+    [Header("UI - Caixa e Dívida")]
+    [SerializeField] private TMP_Text caixaAtualText;
+    [SerializeField] private TMP_Text dividaAtualText;
+    [SerializeField] private string moneyPrefix = "R$ ";
+
+    [Header("Visual da UI")]
+    [SerializeField] private bool useDynamicColor = true;
+    [SerializeField] private Color positiveColor = new Color(0.2f, 0.9f, 0.2f);
+    [SerializeField] private Color negativeColor = new Color(0.9f, 0.2f, 0.2f);
 
     [Header("Debug")]
     [SerializeField] private bool logMessagesInConsole = true;
@@ -51,6 +62,12 @@ public class FinanceManager : MonoBehaviour
     private void Start()
     {
         NotifyChanged();
+    }
+
+    private void OnDestroy()
+    {
+        if (Instance == this)
+            Instance = null;
     }
 
     public DateTime GetNow()
@@ -95,6 +112,7 @@ public class FinanceManager : MonoBehaviour
             return true;
 
         bool spent = SpendMoneyInternal(amount);
+
         if (!spent)
             return false;
 
@@ -135,6 +153,7 @@ public class FinanceManager : MonoBehaviour
         }
 
         int amount = Mathf.Max(0, requestData.ServicePrice);
+
         if (amount <= 0)
             return null;
 
@@ -174,6 +193,7 @@ public class FinanceManager : MonoBehaviour
         FinanceMovementOrigin origin = FinanceMovementOrigin.Service)
     {
         amount = Mathf.Max(0, amount);
+
         if (amount <= 0)
             return null;
 
@@ -254,6 +274,7 @@ public class FinanceManager : MonoBehaviour
         DateTime createdAt = new DateTime(referenceYear, referenceMonth, 1, 8, 0, 0);
 
         DateTime usageBaseDate = new DateTime(referenceYear, referenceMonth, 1).AddMonths(-1);
+
         if (!definition.usePreviousMonthWorkedHours)
             usageBaseDate = new DateTime(referenceYear, referenceMonth, 1);
 
@@ -284,6 +305,7 @@ public class FinanceManager : MonoBehaviour
         bool spendMoneyNow = true)
     {
         amount = Mathf.Max(0, amount);
+
         if (amount <= 0)
             return null;
 
@@ -293,6 +315,7 @@ public class FinanceManager : MonoBehaviour
         if (spendMoneyNow)
         {
             bool spent = SpendMoneyInternal(amount);
+
             if (!spent)
             {
                 Debug.LogWarning("[FinanceManager] Dinheiro insuficiente para registrar compra da loja.");
@@ -346,6 +369,7 @@ public class FinanceManager : MonoBehaviour
             return false;
 
         FinanceMovementData movement = movements.FirstOrDefault(x => x.id == movementId);
+
         if (movement == null)
             return false;
 
@@ -358,10 +382,12 @@ public class FinanceManager : MonoBehaviour
             return false;
 
         bool paid = SpendMoneyInternal(movement.amount);
+
         if (!paid)
             return false;
 
         movement.paymentStatus = FinancePaymentStatus.Paid;
+
         SaveData();
         NotifyChanged();
 
@@ -404,6 +430,27 @@ public class FinanceManager : MonoBehaviour
                 x.DueDate.Year == now.Year &&
                 x.DueDate.Month == now.Month)
             .Sum(x => x.amount);
+    }
+
+    public void RefreshFinanceUI()
+    {
+        if (caixaAtualText != null)
+        {
+            caixaAtualText.text = $"{moneyPrefix}{currentCash}";
+
+            if (useDynamicColor)
+                caixaAtualText.color = currentCash >= 0 ? positiveColor : negativeColor;
+        }
+
+        if (dividaAtualText != null)
+        {
+            int divida = GetOverdueDebtTotal();
+
+            dividaAtualText.text = $"{moneyPrefix}{divida}";
+
+            if (useDynamicColor)
+                dividaAtualText.color = divida > 0 ? negativeColor : positiveColor;
+        }
     }
 
     public List<FinanceMonthGroupData> GetStatementMonthGroups()
@@ -651,10 +698,12 @@ public class FinanceManager : MonoBehaviour
             return;
 
         string json = PlayerPrefs.GetString(historySaveKey, string.Empty);
+
         if (string.IsNullOrWhiteSpace(json))
             return;
 
         FinanceMovementSaveWrapper wrapper = JsonUtility.FromJson<FinanceMovementSaveWrapper>(json);
+
         if (wrapper == null || wrapper.items == null)
             return;
 
@@ -664,6 +713,8 @@ public class FinanceManager : MonoBehaviour
 
     private void NotifyChanged()
     {
+        RefreshFinanceUI();
+
         OnCashChanged?.Invoke(currentCash);
         OnFinanceDataChanged?.Invoke();
     }

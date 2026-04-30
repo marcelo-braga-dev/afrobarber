@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 public class GameUIManager : MonoBehaviour
 {
@@ -20,6 +21,9 @@ public class GameUIManager : MonoBehaviour
 
     [Header("Configuracao")]
     [SerializeField] private bool notificationCanStayWithOtherUI = false;
+
+    [Header("Novo Input System")]
+    [SerializeField] private bool closeAllWithEscape = true;
 
     [Header("Referencias de Refresh (cache)")]
     [SerializeField] private ShopManager shopManager;
@@ -47,7 +51,10 @@ public class GameUIManager : MonoBehaviour
 
     private void Update()
     {
-        if (Input.GetKeyDown(KeyCode.Escape))
+        if (!closeAllWithEscape)
+            return;
+
+        if (Keyboard.current != null && Keyboard.current.escapeKey.wasPressedThisFrame)
             HideAll();
     }
 
