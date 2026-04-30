@@ -3,7 +3,7 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
-public class BarbershopRatingUI : MonoBehaviour
+public class BarbershopRatingUI : BootstrapUIBehaviour
 {
     [Header("Painel")]
     [SerializeField] private GameObject panel;
@@ -30,49 +30,51 @@ public class BarbershopRatingUI : MonoBehaviour
     [SerializeField] private TMP_Text experienceCommentText;
 
     [Header("Configuração")]
-    [SerializeField] private bool hidePanelOnStart = true;
-    [SerializeField] private bool refreshOnStart = true;
-    [SerializeField] private bool enableDebugLogs = true;
+    [SerializeField] private bool hidePanelOnInitialize = true;
+    [SerializeField] private bool refreshOnInitialize = true;
+    [SerializeField] private bool enableDebugLogs = false;
 
     private readonly CultureInfo brazilCulture = new CultureInfo("pt-BR");
 
-    private void Awake()
-    {
-        if (enableDebugLogs)
-        {
-            Debug.Log("[BarbershopRatingUI] Awake chamado.");
-            DebugReferenciasInternas();
-        }
-    }
-
-    private void Start()
+    protected override void OnBootstrapInitialize()
     {
         ConfigureSlider(globalRatingSlider);
         ConfigureSlider(attendanceRatingSlider);
         ConfigureSlider(structureRatingSlider);
         ConfigureSlider(experienceRatingSlider);
 
-        if (hidePanelOnStart && panel != null)
+        Subscribe();
+
+        if (hidePanelOnInitialize && panel != null)
             panel.SetActive(false);
 
-        if (refreshOnStart)
+        if (refreshOnInitialize)
             RefreshUI();
-    }
 
-    private void OnEnable()
-    {
-        if (BarbershopRatingManager.Instance != null)
-        {
-            BarbershopRatingManager.Instance.OnRatingChanged.AddListener(OnRatingChanged);
-            RefreshUI();
-        }
-        else if (enableDebugLogs)
-        {
-            Debug.LogWarning("[BarbershopRatingUI] OnEnable: BarbershopRatingManager.Instance não encontrado.");
-        }
+        if (enableDebugLogs)
+            Debug.Log("[BarbershopRatingUI] Inicializado pelo GameBootstrap.");
     }
 
     private void OnDisable()
+    {
+        Unsubscribe();
+    }
+
+    private void Subscribe()
+    {
+        if (BarbershopRatingManager.Instance == null)
+        {
+            if (enableDebugLogs)
+                Debug.LogWarning("[BarbershopRatingUI] BarbershopRatingManager.Instance não encontrado.");
+
+            return;
+        }
+
+        BarbershopRatingManager.Instance.OnRatingChanged.RemoveListener(OnRatingChanged);
+        BarbershopRatingManager.Instance.OnRatingChanged.AddListener(OnRatingChanged);
+    }
+
+    private void Unsubscribe()
     {
         if (BarbershopRatingManager.Instance != null)
             BarbershopRatingManager.Instance.OnRatingChanged.RemoveListener(OnRatingChanged);
@@ -233,15 +235,6 @@ public class BarbershopRatingUI : MonoBehaviour
         Debug.Log($"attendanceRatingText: {(attendanceRatingText != null ? attendanceRatingText.name : "NULL")}");
         Debug.Log($"structureRatingText: {(structureRatingText != null ? structureRatingText.name : "NULL")}");
         Debug.Log($"experienceRatingText: {(experienceRatingText != null ? experienceRatingText.name : "NULL")}");
-    }
-
-    private void DebugReferenciasInternas()
-    {
-        Debug.Log($"globalRatingText => {(globalRatingText != null ? globalRatingText.name : "NULL")}");
-        Debug.Log($"attendanceRatingText => {(attendanceRatingText != null ? attendanceRatingText.name : "NULL")}");
-        Debug.Log($"structureRatingText => {(structureRatingText != null ? structureRatingText.name : "NULL")}");
-        Debug.Log($"experienceRatingText => {(experienceRatingText != null ? experienceRatingText.name : "NULL")}");
-        Debug.Log($"totalReviewsText => {(totalReviewsText != null ? totalReviewsText.name : "NULL")}");
     }
 
     private void ConfigureSlider(Slider slider)

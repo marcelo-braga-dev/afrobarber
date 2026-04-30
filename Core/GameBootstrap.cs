@@ -1,15 +1,22 @@
 using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 
 public class GameBootstrap : MonoBehaviour
 {
     public static GameBootstrap Instance { get; private set; }
 
+    [Header("Tela de Loading Inicial")]
+    [SerializeField] private GameObject loadingScreen;
+    [SerializeField] private CanvasGroup loadingCanvasGroup;
+    [SerializeField] private float loadingFadeOutDuration = 0.4f;
+
     [Header("Sistemas principais")]
     [SerializeField] private GlobalDialogueManager globalDialogueManager;
     [SerializeField] private GlobalReputationSystem globalReputationSystem;
     [SerializeField] private BarbershopRatingManager barbershopRatingManager;
     [SerializeField] private FinanceManager financeManager;
+    [SerializeField] private BarbershopCashRegister barbershopCashRegister;
     [SerializeField] private BarberQueueSystem barberQueueSystem;
     [SerializeField] private ClientAppointmentScheduler appointmentScheduler;
 
@@ -19,20 +26,67 @@ public class GameBootstrap : MonoBehaviour
     [Header("Objetos pesados para ativar depois")]
     [SerializeField] private GameObject[] delayedObjectsToEnable;
 
-    [Header("Configuração")]
-    [SerializeField] private bool disableUIOnAwake = true;
-    [SerializeField] private float uiDelay = 0.3f;
-    [SerializeField] private float heavyObjectsDelay = 0.8f;
-    [SerializeField] private bool cleanMemoryOnStart = true;
+    [Header("Performance Mobile")]
     [SerializeField] private bool limitFrameRateOnMobile = true;
     [SerializeField] private int targetMobileFrameRate = 30;
+    [SerializeField] private bool disableVSyncOnMobile = true;
+
+    [Header("Carregamento progressivo")]
+    [SerializeField] private bool disableUIOnAwake = true;
+    [SerializeField] private bool disableDelayedObjectsOnAwake = true;
+    [SerializeField] private bool cleanMemoryOnStart = true;
+    [SerializeField] private float startDelay = 0.1f;
+    [SerializeField] private float uiDelay = 0.25f;
+    [SerializeField] private float heavyObjectsDelay = 0.5f;
+    [SerializeField] private int heavyObjectsPerBatch = 1;
+    [SerializeField] private float delayBetweenHeavyObjectBatches = 0.05f;
+    [SerializeField] private bool initializeDelayedObjects = true;
 
     [Header("Debug")]
     [SerializeField] private bool enableLogs = true;
+    [SerializeField] private bool logActivatedObjects = false;
+    [SerializeField] private bool logWarnings = true;
 
     public bool IsReady { get; private set; }
+    public bool IsBootstrapping { get; private set; }
+    public float Progress01 { get; private set; }
+
+    private readonly List<GameObject> coreObjectsCache = new List<GameObject>(8);
+    private Coroutine bootstrapRoutine;
 
     private void Awake()
+    {
+        SetupSingleton();
+
+        ShowLoadingScreenImmediate();
+
+        ConfigureMobilePerformance();
+        BuildCoreObjectsCache();
+
+        if (disableUIOnAwake)
+            SetObjectsActive(uiObjectsToEnableAfterBootstrap, false);
+
+        if (disableDelayedObjectsOnAwake)
+            SetObjectsActive(delayedObjectsToEnable, false);
+
+        FindMissingReferences();
+    }
+
+    private void OnDestroy()
+    {
+        if (Instance == this)
+            Instance = null;
+    }
+
+    private void Start()
+    {
+        if (bootstrapRoutine != null)
+            StopCoroutine(bootstrapRoutine);
+
+        bootstrapRoutine = StartCoroutine(BootstrapRoutine());
+    }
+
+    private void SetupSingleton()
     {
         if (Instance != null && Instance != this)
         {
@@ -41,42 +95,93 @@ public class GameBootstrap : MonoBehaviour
         }
 
         Instance = this;
-
-        ConfigureMobilePerformance();
-
-        if (disableUIOnAwake)
-            SetObjectsActive(uiObjectsToEnableAfterBootstrap, false);
-
-        SetObjectsActive(delayedObjectsToEnable, false);
-
-        FindMissingReferences();
     }
 
-    private IEnumerator Start()
+    private IEnumerator BootstrapRoutine()
     {
         IsReady = false;
+        IsBootstrapping = true;
+        Progress01 = 0f;
+
+        Log("Bootstrap iniciado.");
+
+        if (startDelay > 0f)
+            yield return new WaitForSeconds(startDelay);
 
         if (cleanMemoryOnStart)
         {
+            Log("Limpando memória antes da inicialização...");
             yield return Resources.UnloadUnusedAssets();
             System.GC.Collect();
+            yield return null;
         }
 
-        yield return null;
+        Progress01 = 0.15f;
 
-        InitializeCoreSystems();
+        yield return InitializeCoreSystemsRoutine();
 
-        yield return new WaitForSeconds(uiDelay);
+        Progress01 = 0.45f;
 
-        EnableUI();
+        if (uiDelay > 0f)
+            yield return new WaitForSeconds(uiDelay);
 
-        yield return new WaitForSeconds(heavyObjectsDelay);
+        yield return EnableUIRoutine();
 
-        EnableDelayedObjects();
+        Progress01 = 0.7f;
 
+        if (heavyObjectsDelay > 0f)
+            yield return new WaitForSeconds(heavyObjectsDelay);
+
+        yield return EnableDelayedObjectsRoutine();
+
+        Progress01 = 1f;
         IsReady = true;
+        IsBootstrapping = false;
+        bootstrapRoutine = null;
 
         Log("Bootstrap finalizado. Cena pronta.");
+
+        yield return HideLoadingScreenRoutine();
+    }
+
+    private void ShowLoadingScreenImmediate()
+    {
+        if (loadingScreen != null)
+            loadingScreen.SetActive(true);
+
+        if (loadingCanvasGroup != null)
+        {
+            loadingCanvasGroup.alpha = 1f;
+            loadingCanvasGroup.blocksRaycasts = true;
+            loadingCanvasGroup.interactable = true;
+        }
+    }
+
+    private IEnumerator HideLoadingScreenRoutine()
+    {
+        if (loadingScreen == null)
+            yield break;
+
+        if (loadingCanvasGroup == null || loadingFadeOutDuration <= 0f)
+        {
+            loadingScreen.SetActive(false);
+            yield break;
+        }
+
+        float elapsed = 0f;
+        loadingCanvasGroup.blocksRaycasts = true;
+        loadingCanvasGroup.interactable = false;
+
+        while (elapsed < loadingFadeOutDuration)
+        {
+            elapsed += Time.unscaledDeltaTime;
+            loadingCanvasGroup.alpha = Mathf.Lerp(1f, 0f, elapsed / loadingFadeOutDuration);
+            yield return null;
+        }
+
+        loadingCanvasGroup.alpha = 0f;
+        loadingCanvasGroup.blocksRaycasts = false;
+        loadingScreen.SetActive(false);
     }
 
     private void ConfigureMobilePerformance()
@@ -84,59 +189,146 @@ public class GameBootstrap : MonoBehaviour
 #if UNITY_ANDROID || UNITY_IOS
         if (limitFrameRateOnMobile)
         {
-            Application.targetFrameRate = targetMobileFrameRate;
-            QualitySettings.vSyncCount = 0;
+            Application.targetFrameRate = Mathf.Clamp(targetMobileFrameRate, 24, 60);
+
+            if (disableVSyncOnMobile)
+                QualitySettings.vSyncCount = 0;
         }
 #endif
     }
 
-    private void InitializeCoreSystems()
+    private void BuildCoreObjectsCache()
+    {
+        coreObjectsCache.Clear();
+
+        AddCoreObject(globalDialogueManager);
+        AddCoreObject(globalReputationSystem);
+        AddCoreObject(barbershopRatingManager);
+        AddCoreObject(financeManager);
+        AddCoreObject(barbershopCashRegister);
+        AddCoreObject(barberQueueSystem);
+        AddCoreObject(appointmentScheduler);
+    }
+
+    private void AddCoreObject(Component component)
+    {
+        if (component == null)
+            return;
+
+        GameObject obj = component.gameObject;
+
+        if (obj != null && !coreObjectsCache.Contains(obj))
+            coreObjectsCache.Add(obj);
+    }
+
+    private IEnumerator InitializeCoreSystemsRoutine()
     {
         Log("Inicializando sistemas principais...");
 
-        if (globalDialogueManager != null)
-            globalDialogueManager.gameObject.SetActive(true);
-
-        if (globalReputationSystem != null)
-            globalReputationSystem.gameObject.SetActive(true);
-
-        if (barbershopRatingManager != null)
-            barbershopRatingManager.gameObject.SetActive(true);
-
-        if (financeManager != null)
-            financeManager.gameObject.SetActive(true);
-
-        if (barberQueueSystem != null)
-            barberQueueSystem.gameObject.SetActive(true);
-
-        if (appointmentScheduler != null)
-            appointmentScheduler.gameObject.SetActive(true);
-    }
-
-    private void EnableUI()
-    {
-        Log("Liberando UI...");
-
-        SetObjectsActive(uiObjectsToEnableAfterBootstrap, true);
-
-        foreach (GameObject obj in uiObjectsToEnableAfterBootstrap)
+        for (int i = 0; i < coreObjectsCache.Count; i++)
         {
-            if (obj == null)
-                continue;
+            ActivateAndInitialize(coreObjectsCache[i]);
 
-            IGameBootstrapInitializable[] initializables =
-                obj.GetComponentsInChildren<IGameBootstrapInitializable>(true);
+            if (coreObjectsCache.Count > 0)
+                Progress01 = Mathf.Lerp(0.15f, 0.45f, (i + 1f) / coreObjectsCache.Count);
 
-            foreach (IGameBootstrapInitializable item in initializables)
-                item.InitializeFromBootstrap();
+            yield return null;
         }
     }
 
-    private void EnableDelayedObjects()
+    private IEnumerator EnableUIRoutine()
     {
-        Log("Liberando objetos pesados...");
+        Log("Liberando UI...");
 
-        SetObjectsActive(delayedObjectsToEnable, true);
+        if (uiObjectsToEnableAfterBootstrap == null)
+            yield break;
+
+        for (int i = 0; i < uiObjectsToEnableAfterBootstrap.Length; i++)
+        {
+            GameObject obj = uiObjectsToEnableAfterBootstrap[i];
+
+            if (obj == null)
+                continue;
+
+            obj.SetActive(true);
+            InitializeBootstrapComponents(obj);
+
+            if (logActivatedObjects)
+                Log("UI ativada: " + obj.name);
+
+            yield return null;
+        }
+    }
+
+    private IEnumerator EnableDelayedObjectsRoutine()
+    {
+        Log("Liberando objetos pesados progressivamente...");
+
+        if (delayedObjectsToEnable == null || delayedObjectsToEnable.Length == 0)
+            yield break;
+
+        int batchSize = Mathf.Max(1, heavyObjectsPerBatch);
+        int activatedInBatch = 0;
+
+        for (int i = 0; i < delayedObjectsToEnable.Length; i++)
+        {
+            GameObject obj = delayedObjectsToEnable[i];
+
+            if (obj == null)
+                continue;
+
+            obj.SetActive(true);
+
+            if (initializeDelayedObjects)
+                InitializeBootstrapComponents(obj);
+
+            if (logActivatedObjects)
+                Log("Objeto pesado ativado: " + obj.name);
+
+            activatedInBatch++;
+
+            float progress = (i + 1f) / delayedObjectsToEnable.Length;
+            Progress01 = Mathf.Lerp(0.7f, 1f, progress);
+
+            if (activatedInBatch >= batchSize)
+            {
+                activatedInBatch = 0;
+
+                if (delayBetweenHeavyObjectBatches > 0f)
+                    yield return new WaitForSeconds(delayBetweenHeavyObjectBatches);
+                else
+                    yield return null;
+            }
+        }
+    }
+
+    private void ActivateAndInitialize(GameObject obj)
+    {
+        if (obj == null)
+            return;
+
+        if (!obj.activeSelf)
+            obj.SetActive(true);
+
+        InitializeBootstrapComponents(obj);
+
+        if (logActivatedObjects)
+            Log("Sistema inicializado: " + obj.name);
+    }
+
+    private void InitializeBootstrapComponents(GameObject obj)
+    {
+        if (obj == null)
+            return;
+
+        IGameBootstrapInitializable[] initializables =
+            obj.GetComponentsInChildren<IGameBootstrapInitializable>(true);
+
+        for (int i = 0; i < initializables.Length; i++)
+        {
+            if (initializables[i] != null)
+                initializables[i].InitializeFromBootstrap();
+        }
     }
 
     private void SetObjectsActive(GameObject[] objects, bool active)
@@ -144,15 +336,18 @@ public class GameBootstrap : MonoBehaviour
         if (objects == null)
             return;
 
-        foreach (GameObject obj in objects)
+        for (int i = 0; i < objects.Length; i++)
         {
-            if (obj != null)
-                obj.SetActive(active);
+            if (objects[i] != null)
+                objects[i].SetActive(active);
         }
     }
 
     private void FindMissingReferences()
     {
+        if (!logWarnings)
+            return;
+
         if (globalDialogueManager == null)
             LogWarning("GlobalDialogueManager não foi atribuído.");
 
@@ -164,6 +359,9 @@ public class GameBootstrap : MonoBehaviour
 
         if (financeManager == null)
             LogWarning("FinanceManager não foi atribuído.");
+
+        if (barbershopCashRegister == null)
+            LogWarning("BarbershopCashRegister não foi atribuído.");
 
         if (barberQueueSystem == null)
             LogWarning("BarberQueueSystem não foi atribuído.");
@@ -180,7 +378,7 @@ public class GameBootstrap : MonoBehaviour
 
     private void LogWarning(string message)
     {
-        if (enableLogs)
+        if (enableLogs && logWarnings)
             Debug.LogWarning("[GameBootstrap] " + message);
     }
 }

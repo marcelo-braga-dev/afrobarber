@@ -1,44 +1,30 @@
-using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class AppointmentPanelUI : MonoBehaviour
+public class AppointmentPanelUI : BootstrapUIBehaviour
 {
     [SerializeField] private GameObject rootPanel;
     [SerializeField] private Transform contentParent;
     [SerializeField] private AppointmentItemUI itemPrefab;
 
+    [Header("Configuração")]
+    [SerializeField] private bool refreshWhenInitialized = true;
+
     [Header("Debug")]
-    [SerializeField] private bool enableDebugLogs = true;
+    [SerializeField] private bool enableDebugLogs = false;
 
     private readonly List<AppointmentItemUI> items = new List<AppointmentItemUI>();
     private bool subscribed;
 
-    private void Start()
+    protected override void OnBootstrapInitialize()
     {
-        StartCoroutine(WaitForScheduler());
-    }
-
-    private IEnumerator WaitForScheduler()
-    {
-        while (ClientAppointmentScheduler.Instance == null)
-            yield return null;
-
         Subscribe();
 
         if (enableDebugLogs)
-            Debug.Log("[AppointmentPanelUI] ClientAppointmentScheduler encontrado.");
+            Debug.Log("[AppointmentPanelUI] Inicializado pelo GameBootstrap.");
 
-        Refresh();
-    }
-
-    private void OnEnable()
-    {
-        if (ClientAppointmentScheduler.Instance != null)
-        {
-            Subscribe();
+        if (refreshWhenInitialized)
             Refresh();
-        }
     }
 
     private void OnDisable()
@@ -52,9 +38,16 @@ public class AppointmentPanelUI : MonoBehaviour
             return;
 
         if (ClientAppointmentScheduler.Instance == null)
-            return;
+        {
+            if (enableDebugLogs)
+                Debug.LogWarning("[AppointmentPanelUI] ClientAppointmentScheduler.Instance não encontrado.");
 
+            return;
+        }
+
+        ClientAppointmentScheduler.Instance.OnAppointmentsChanged -= Refresh;
         ClientAppointmentScheduler.Instance.OnAppointmentsChanged += Refresh;
+
         subscribed = true;
     }
 
@@ -105,13 +98,17 @@ public class AppointmentPanelUI : MonoBehaviour
 
         if (contentParent == null)
         {
-            Debug.LogWarning("[AppointmentPanelUI] Content Parent não configurado.");
+            if (enableDebugLogs)
+                Debug.LogWarning("[AppointmentPanelUI] Content Parent não configurado.");
+
             return;
         }
 
         if (itemPrefab == null)
         {
-            Debug.LogWarning("[AppointmentPanelUI] Item Prefab não configurado.");
+            if (enableDebugLogs)
+                Debug.LogWarning("[AppointmentPanelUI] Item Prefab não configurado.");
+
             return;
         }
 

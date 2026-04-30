@@ -1,7 +1,7 @@
 using UnityEngine;
 using UnityEngine.Events;
 
-public class BarbershopCashRegister : MonoBehaviour
+public class BarbershopCashRegister : BootstrapUIBehaviour
 {
     public static BarbershopCashRegister Instance { get; private set; }
 
@@ -9,7 +9,9 @@ public class BarbershopCashRegister : MonoBehaviour
     public UnityEvent<int> OnMoneyChanged;
 
     [Header("Debug")]
-    [SerializeField] private bool logMessagesInConsole = true;
+    [SerializeField] private bool logMessagesInConsole = false;
+
+    private bool subscribed;
 
     public int CurrentMoney
     {
@@ -33,14 +35,9 @@ public class BarbershopCashRegister : MonoBehaviour
         Instance = this;
     }
 
-    private void OnEnable()
+    protected override void OnBootstrapInitialize()
     {
         SubscribeToFinance();
-        EmitCurrentMoney();
-    }
-
-    private void Start()
-    {
         EmitCurrentMoney();
     }
 
@@ -49,11 +46,19 @@ public class BarbershopCashRegister : MonoBehaviour
         UnsubscribeFromFinance();
     }
 
+    private void OnDestroy()
+    {
+        if (Instance == this)
+            Instance = null;
+
+        UnsubscribeFromFinance();
+    }
+
     public void AddMoney(int amount)
     {
         if (FinanceManager.Instance == null)
         {
-            Debug.LogWarning("[BarbershopCashRegister] FinanceManager.Instance não encontrado.");
+            LogWarning("FinanceManager.Instance não encontrado.");
             return;
         }
 
@@ -64,7 +69,7 @@ public class BarbershopCashRegister : MonoBehaviour
     {
         if (FinanceManager.Instance == null)
         {
-            Debug.LogWarning("[BarbershopCashRegister] FinanceManager.Instance não encontrado.");
+            LogWarning("FinanceManager.Instance não encontrado.");
             return false;
         }
 
@@ -75,7 +80,7 @@ public class BarbershopCashRegister : MonoBehaviour
     {
         if (FinanceManager.Instance == null)
         {
-            Debug.LogWarning("[BarbershopCashRegister] FinanceManager.Instance não encontrado.");
+            LogWarning("FinanceManager.Instance não encontrado.");
             return;
         }
 
@@ -84,19 +89,30 @@ public class BarbershopCashRegister : MonoBehaviour
 
     private void SubscribeToFinance()
     {
-        if (FinanceManager.Instance != null)
+        if (subscribed)
+            return;
+
+        if (FinanceManager.Instance == null)
         {
-            FinanceManager.Instance.OnCashChanged -= HandleCashChanged;
-            FinanceManager.Instance.OnCashChanged += HandleCashChanged;
+            LogWarning("FinanceManager.Instance não encontrado ao tentar inscrever.");
+            return;
         }
+
+        FinanceManager.Instance.OnCashChanged -= HandleCashChanged;
+        FinanceManager.Instance.OnCashChanged += HandleCashChanged;
+
+        subscribed = true;
     }
 
     private void UnsubscribeFromFinance()
     {
+        if (!subscribed)
+            return;
+
         if (FinanceManager.Instance != null)
-        {
             FinanceManager.Instance.OnCashChanged -= HandleCashChanged;
-        }
+
+        subscribed = false;
     }
 
     private void HandleCashChanged(int amount)
@@ -110,5 +126,11 @@ public class BarbershopCashRegister : MonoBehaviour
     private void EmitCurrentMoney()
     {
         HandleCashChanged(CurrentMoney);
+    }
+
+    private void LogWarning(string message)
+    {
+        if (logMessagesInConsole)
+            Debug.LogWarning("[BarbershopCashRegister] " + message);
     }
 }

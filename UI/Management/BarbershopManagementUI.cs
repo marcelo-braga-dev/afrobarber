@@ -45,7 +45,6 @@ public class BarbershopManagementUI : MonoBehaviour
     private readonly List<ServicePriceManagementRowUI> createdRows = new List<ServicePriceManagementRowUI>();
 
     private bool dropdownsInitialized;
-    private bool isRefreshing;
 
     private void Awake()
     {
@@ -98,8 +97,6 @@ public class BarbershopManagementUI : MonoBehaviour
 
         InitializeTimeDropdowns();
 
-        isRefreshing = true;
-
         GlobalGameplayManagement management = GlobalGameplayManagement.Instance;
 
         for (int i = 0; i < createdRows.Count; i++)
@@ -123,8 +120,6 @@ public class BarbershopManagementUI : MonoBehaviour
             createdRows[i].RefreshFromManagement(management);
 
         RefreshSummary();
-
-        isRefreshing = false;
     }
 
     private void BuildPriceRowsIfNeeded()

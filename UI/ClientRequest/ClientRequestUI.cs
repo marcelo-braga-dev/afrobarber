@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -26,31 +25,16 @@ public class ClientRequestUI : MonoBehaviour
     [SerializeField] private TMP_Text educationTitleText;
     [SerializeField] private TMP_Text educationSummaryText;
 
-    [Header("Itens requeridos")]
-    [SerializeField] private Transform requirementsParent;
-    [SerializeField] private RequestRequirementSlotUI requirementSlotPrefab;
-
     [Header("Botões")]
     [SerializeField] private Button acceptButton;
     [SerializeField] private Button dispenseButton;
     [SerializeField] private Button closeButton;
-
-    [Header("Seleção sobreposta")]
-    [SerializeField] private GameObject overlayPanel;
-    [SerializeField] private Transform overlayContentParent;
-    [SerializeField] private ProductChoiceItemUI productChoicePrefab;
-    [SerializeField] private Button overlayCloseButton;
-    [SerializeField] private TMP_Text overlayTitleText;
 
     [Header("Debug")]
     [SerializeField] private bool enableDebugLogs = true;
 
     private ClientNPC currentClient;
     private ClientRequestData currentRequest;
-    private PreparedServiceLoadout currentLoadout;
-
-    private readonly List<GameObject> spawnedRequirementSlots = new List<GameObject>();
-    private readonly List<GameObject> spawnedChoiceItems = new List<GameObject>();
 
     private void Awake()
     {
@@ -82,13 +66,9 @@ public class ClientRequestUI : MonoBehaviour
 
         currentClient = client;
         currentRequest = request;
-        currentLoadout = ServiceLoadoutBuilder.BuildDefaultLoadout(currentRequest);
 
         if (rootPanel != null)
             rootPanel.SetActive(true);
-
-        if (overlayPanel != null)
-            overlayPanel.SetActive(false);
 
         BindButtons();
         Refresh();
@@ -130,12 +110,6 @@ public class ClientRequestUI : MonoBehaviour
             closeButton.onClick.RemoveAllListeners();
             closeButton.onClick.AddListener(Hide);
         }
-
-        if (overlayCloseButton != null)
-        {
-            overlayCloseButton.onClick.RemoveAllListeners();
-            overlayCloseButton.onClick.AddListener(CloseOverlay);
-        }
     }
 
     private void Refresh()
@@ -170,18 +144,13 @@ public class ClientRequestUI : MonoBehaviour
             difficultyText.text = $"Dificuldade {currentRequest.difficulty}";
 
         RefreshEducationalPanel();
-        BuildRequirementSlots();
         UpdateSummaryAndReadiness();
 
-        bool hasAllItems = InventoryManager.Instance != null &&
-                           InventoryManager.Instance.HasAllRequirements(currentRequest.requiredItems) &&
-                           ServiceLoadoutBuilder.IsLoadoutComplete(currentRequest, currentLoadout);
-
         if (acceptButton != null)
-            acceptButton.gameObject.SetActive(hasAllItems);
+            acceptButton.gameObject.SetActive(true);
 
         if (dispenseButton != null)
-            dispenseButton.gameObject.SetActive(!hasAllItems);
+            dispenseButton.gameObject.SetActive(true);
     }
 
     private void RefreshEducationalPanel()
@@ -229,168 +198,16 @@ public class ClientRequestUI : MonoBehaviour
             educationSummaryText.text = summary;
 
         if (enableDebugLogs)
-        {
-            Debug.Log(
-                $"[ClientRequestUI] Educação carregada | " +
-                $"Title: {title} | Summary: {summary}"
-            );
-        }
-    }
-
-    private void BuildRequirementSlots()
-    {
-        ClearRequirementSlots();
-
-        if (currentRequest.requiredItems == null || requirementSlotPrefab == null || requirementsParent == null)
-            return;
-
-        foreach (ServiceRequirementData requirement in currentRequest.requiredItems)
-        {
-            if (requirement == null)
-                continue;
-
-            RequestRequirementSlotUI slot = Instantiate(requirementSlotPrefab, requirementsParent);
-            spawnedRequirementSlots.Add(slot.gameObject);
-
-            PreparedServiceItemSelection selection = currentLoadout.GetSelectionByRequirement(requirement.requirementId);
-
-            ProductInventoryState selectedState =
-                selection != null && InventoryManager.Instance != null
-                    ? InventoryManager.Instance.GetItemByUniqueId(selection.productUniqueId)
-                    : null;
-
-            ProductData selectedProduct =
-                selectedState != null && InventoryManager.Instance != null
-                    ? InventoryManager.Instance.GetProductDataById(selectedState.productId)
-                    : null;
-
-            bool available = InventoryManager.Instance != null &&
-                             InventoryManager.Instance.HasUsableItemForRequirement(requirement);
-
-            slot.Setup(currentRequest, requirement, selectedProduct, available, this);
-        }
+            Debug.Log($"[ClientRequestUI] Educação carregada | Title: {title} | Summary: {summary}");
     }
 
     private void UpdateSummaryAndReadiness()
     {
-        if (currentRequest == null || currentRequest.requiredItems == null || currentRequest.requiredItems.Count == 0)
-        {
-            if (summaryText != null)
-                summaryText.text = "Nenhum item exigido.";
-
-            if (readinessFillImage != null)
-                readinessFillImage.fillAmount = 1f;
-
-            return;
-        }
-
-        int total = 0;
-        int ready = 0;
-
-        foreach (ServiceRequirementData requirement in currentRequest.requiredItems)
-        {
-            if (requirement == null)
-                continue;
-
-            total++;
-
-            PreparedServiceItemSelection selection = currentLoadout.GetSelectionByRequirement(requirement.requirementId);
-            if (selection == null)
-                continue;
-
-            if (InventoryManager.Instance == null)
-                continue;
-
-            ProductInventoryState state = InventoryManager.Instance.GetItemByUniqueId(selection.productUniqueId);
-            if (state == null)
-                continue;
-
-            ProductData product = InventoryManager.Instance.GetProductDataById(state.productId);
-            if (product == null)
-                continue;
-
-            if (state.IsUsable(product))
-                ready++;
-        }
-
-        float percent = total <= 0 ? 1f : (float)ready / total;
-
         if (summaryText != null)
-        {
-            if (ready == total)
-                summaryText.text = "Tudo pronto para iniciar o atendimento.";
-            else
-                summaryText.text = "Faltam itens necessários para esse atendimento.";
-        }
+            summaryText.text = "Aceite o cliente para iniciar o atendimento ou dispense o cliente.";
 
         if (readinessFillImage != null)
-            readinessFillImage.fillAmount = percent;
-    }
-
-    public void OpenSelectionForRequirement(ClientRequestData request, ServiceRequirementData requirement)
-    {
-        if (request == null || requirement == null)
-            return;
-
-        if (overlayPanel != null)
-            overlayPanel.SetActive(true);
-
-        if (overlayTitleText != null)
-            overlayTitleText.text = $"Escolher: {requirement.GetDisplayName()}";
-
-        ClearChoiceItems();
-
-        if (InventoryManager.Instance == null || productChoicePrefab == null || overlayContentParent == null)
-            return;
-
-        List<ProductInventoryState> options = InventoryManager.Instance.GetUsableItemsForRequirement(requirement);
-
-        foreach (ProductInventoryState option in options)
-        {
-            ProductData product = InventoryManager.Instance.GetProductDataById(option.productId);
-            if (product == null)
-                continue;
-
-            ProductChoiceItemUI choice = Instantiate(productChoicePrefab, overlayContentParent);
-            spawnedChoiceItems.Add(choice.gameObject);
-
-            choice.Setup(product, option, () =>
-            {
-                SelectRequirementItem(requirement, option);
-            });
-        }
-    }
-
-    public void OpenSelectionForRequirement(ServiceRequirementData requirement)
-    {
-        OpenSelectionForRequirement(currentRequest, requirement);
-    }
-
-    private void SelectRequirementItem(ServiceRequirementData requirement, ProductInventoryState option)
-    {
-        if (currentLoadout == null || requirement == null || option == null)
-            return;
-
-        PreparedServiceItemSelection existing = currentLoadout.GetSelectionByRequirement(requirement.requirementId);
-
-        if (existing == null)
-        {
-            existing = new PreparedServiceItemSelection
-            {
-                requirementId = requirement.requirementId
-            };
-
-            currentLoadout.selections.Add(existing);
-        }
-
-        existing.productUniqueId = option.uniqueId;
-        existing.productId = option.productId;
-
-        if (ServiceSelectionMemory.Instance != null && currentRequest != null)
-            ServiceSelectionMemory.Instance.SaveLastProductId(currentRequest.RequestId, requirement.requirementId, option.productId);
-
-        CloseOverlay();
-        Refresh();
+            readinessFillImage.fillAmount = 1f;
     }
 
     private void OnClickAccept()
@@ -398,25 +215,9 @@ public class ClientRequestUI : MonoBehaviour
         if (currentClient == null || currentRequest == null)
             return;
 
-        if (InventoryManager.Instance == null)
-        {
-            Debug.LogWarning("[ClientRequestUI] InventoryManager.Instance não encontrado.");
-            return;
-        }
+        if (enableDebugLogs)
+            Debug.Log($"[ClientRequestUI] Cliente aceito: {currentClient.name} | Pedido: {currentRequest.RequestName}");
 
-        if (!InventoryManager.Instance.HasAllRequirements(currentRequest.requiredItems))
-        {
-            Refresh();
-            return;
-        }
-
-        if (!ServiceLoadoutBuilder.IsLoadoutComplete(currentRequest, currentLoadout))
-        {
-            Refresh();
-            return;
-        }
-
-        currentClient.SetPreparedLoadout(currentLoadout);
         currentClient.CallForService();
         Hide();
     }
@@ -424,26 +225,21 @@ public class ClientRequestUI : MonoBehaviour
     private void OnClickDispense()
     {
         if (currentClient != null)
+        {
+            if (enableDebugLogs)
+                Debug.Log($"[ClientRequestUI] Cliente dispensado: {currentClient.name}");
+
             currentClient.DispenseDueToMissingItems();
+        }
 
         Hide();
-    }
-
-    private void CloseOverlay()
-    {
-        if (overlayPanel != null)
-            overlayPanel.SetActive(false);
-
-        ClearChoiceItems();
     }
 
     public void Hide()
     {
         currentClient = null;
         currentRequest = null;
-        currentLoadout = null;
 
-        CloseOverlay();
         HideImmediate();
     }
 
@@ -451,33 +247,5 @@ public class ClientRequestUI : MonoBehaviour
     {
         if (rootPanel != null)
             rootPanel.SetActive(false);
-
-        if (overlayPanel != null)
-            overlayPanel.SetActive(false);
-
-        ClearRequirementSlots();
-        ClearChoiceItems();
-    }
-
-    private void ClearRequirementSlots()
-    {
-        foreach (GameObject obj in spawnedRequirementSlots)
-        {
-            if (obj != null)
-                Destroy(obj);
-        }
-
-        spawnedRequirementSlots.Clear();
-    }
-
-    private void ClearChoiceItems()
-    {
-        foreach (GameObject obj in spawnedChoiceItems)
-        {
-            if (obj != null)
-                Destroy(obj);
-        }
-
-        spawnedChoiceItems.Clear();
     }
 }

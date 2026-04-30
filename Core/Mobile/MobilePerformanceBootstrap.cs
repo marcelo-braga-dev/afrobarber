@@ -9,7 +9,6 @@ public class MobilePerformanceBootstrap : MonoBehaviour
 
     [Header("Qualidade")]
     [SerializeField] private string androidQualityName = "Mobile Medium";
-    [SerializeField] private string iosQualityName = "Mobile Medium";
 
     [Header("Memória")]
     [SerializeField] private bool triggerGcOnSceneStart = true;

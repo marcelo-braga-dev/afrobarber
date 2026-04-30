@@ -3,39 +3,34 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
-public class ReputationUI : MonoBehaviour
+public class ReputationUI : BootstrapUIBehaviour
 {
     [Header("Referências")]
     [SerializeField] private TMP_Text reputationText;
     [SerializeField] private TMP_Text totalRatingsText;
     [SerializeField] private Slider reputationSlider;
 
+    [Header("Debug")]
+    [SerializeField] private bool enableLogs = false;
+
     private readonly CultureInfo brazilCulture = new CultureInfo("pt-BR");
 
-    private void Start()
+    protected override void OnBootstrapInitialize()
     {
         SetupSlider();
         TryBindAndRefresh();
     }
 
-    private void OnEnable()
-    {
-        TryBindAndRefresh();
-    }
-
     private void OnDisable()
     {
-        if (GlobalReputationSystem.Instance != null)
-        {
-            GlobalReputationSystem.Instance.OnReputationChanged -= UpdateUI;
-        }
+        Unsubscribe();
     }
 
     private void SetupSlider()
     {
         if (reputationSlider == null)
         {
-            Debug.LogWarning("[ReputationUI] reputationSlider não foi configurado.");
+            LogWarning("reputationSlider não foi configurado.");
             return;
         }
 
@@ -47,19 +42,25 @@ public class ReputationUI : MonoBehaviour
 
     private void TryBindAndRefresh()
     {
-        if (GlobalReputationSystem.Instance != null)
+        if (GlobalReputationSystem.Instance == null)
         {
-            GlobalReputationSystem.Instance.OnReputationChanged -= UpdateUI;
-            GlobalReputationSystem.Instance.OnReputationChanged += UpdateUI;
-
-            Debug.Log("[ReputationUI] Conectado ao GlobalReputationSystem.");
-            UpdateUI(GlobalReputationSystem.Instance.Reputation);
-        }
-        else
-        {
-            Debug.LogWarning("[ReputationUI] GlobalReputationSystem.Instance não encontrado.");
+            LogWarning("GlobalReputationSystem.Instance não encontrado.");
             UpdateUI(0f);
+            return;
         }
+
+        Unsubscribe();
+
+        GlobalReputationSystem.Instance.OnReputationChanged += UpdateUI;
+
+        Log("Conectado ao GlobalReputationSystem.");
+        UpdateUI(GlobalReputationSystem.Instance.Reputation);
+    }
+
+    private void Unsubscribe()
+    {
+        if (GlobalReputationSystem.Instance != null)
+            GlobalReputationSystem.Instance.OnReputationChanged -= UpdateUI;
     }
 
     private void UpdateUI(float reputationValue)
@@ -68,28 +69,30 @@ public class ReputationUI : MonoBehaviour
         reputationValue = Mathf.Round(reputationValue * 10f) / 10f;
 
         if (reputationText != null)
-        {
             reputationText.text = $"{reputationValue.ToString("0.0", brazilCulture)}/5";
-        }
         else
-        {
-            Debug.LogWarning("[ReputationUI] reputationText não foi configurado.");
-        }
+            LogWarning("reputationText não foi configurado.");
 
         if (totalRatingsText != null && GlobalReputationSystem.Instance != null)
-        {
             totalRatingsText.text = $"Avaliações: {GlobalReputationSystem.Instance.TotalRatings}";
-        }
 
         if (reputationSlider != null)
-        {
             reputationSlider.value = reputationValue;
-        }
         else
-        {
-            Debug.LogWarning("[ReputationUI] reputationSlider está null.");
-        }
+            LogWarning("reputationSlider está null.");
 
-        Debug.Log($"[ReputationUI] UI atualizada: {reputationValue}/5");
+        Log($"UI atualizada: {reputationValue.ToString("0.0", brazilCulture)}/5");
+    }
+
+    private void Log(string message)
+    {
+        if (enableLogs)
+            Debug.Log("[ReputationUI] " + message);
+    }
+
+    private void LogWarning(string message)
+    {
+        if (enableLogs)
+            Debug.LogWarning("[ReputationUI] " + message);
     }
 }

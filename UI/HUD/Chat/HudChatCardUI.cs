@@ -1,9 +1,8 @@
 using System.Collections.Generic;
-using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
-public class HudChatCardUI : MonoBehaviour
+public class HudChatCardUI : BootstrapUIBehaviour
 {
     [Header("Referências")]
     [SerializeField] private ScrollRect scrollRect;
@@ -12,6 +11,9 @@ public class HudChatCardUI : MonoBehaviour
 
     [Header("Configuração")]
     [SerializeField] private int maxVisibleMessages = 80;
+
+    [Header("Debug")]
+    [SerializeField] private bool enableDebugLogs = false;
 
     [Header("Cores fixas")]
     [SerializeField] private Color playerNameColor = new Color(0.25f, 0.75f, 1f);
@@ -36,13 +38,7 @@ public class HudChatCardUI : MonoBehaviour
 
     private bool isSubscribed;
 
-    private void OnEnable()
-    {
-        TrySubscribe();
-        RebuildHistory();
-    }
-
-    private void Start()
+    protected override void OnBootstrapInitialize()
     {
         TrySubscribe();
         RebuildHistory();
@@ -60,8 +56,9 @@ public class HudChatCardUI : MonoBehaviour
 
         if (GlobalDialogueManager.Instance == null)
         {
-            Debug.LogWarning("[HudChatCardUI] GlobalDialogueManager.Instance ainda não existe. Tentando novamente em breve.");
-            Invoke(nameof(TrySubscribe), 0.2f);
+            if (enableDebugLogs)
+                Debug.LogWarning("[HudChatCardUI] GlobalDialogueManager.Instance ainda não existe.");
+
             return;
         }
 
@@ -70,17 +67,14 @@ public class HudChatCardUI : MonoBehaviour
 
         isSubscribed = true;
 
-        Debug.Log("[HudChatCardUI] Inscrito no OnMessageAdded com sucesso.");
+        if (enableDebugLogs)
+            Debug.Log("[HudChatCardUI] Inscrito no OnMessageAdded com sucesso.");
     }
 
     private void Unsubscribe()
     {
-        CancelInvoke(nameof(TrySubscribe));
-
         if (GlobalDialogueManager.Instance != null)
-        {
             GlobalDialogueManager.Instance.OnMessageAdded -= HandleMessage;
-        }
 
         isSubscribed = false;
     }
@@ -96,9 +90,7 @@ public class HudChatCardUI : MonoBehaviour
         ClearContent();
 
         foreach (ChatMessageData item in GlobalDialogueManager.Instance.History)
-        {
             AddMessageUI(item, false);
-        }
 
         ScrollToBottom();
     }
@@ -112,19 +104,25 @@ public class HudChatCardUI : MonoBehaviour
     {
         if (contentRoot == null)
         {
-            Debug.LogWarning("[HudChatCardUI] Content Root não foi configurado.");
+            if (enableDebugLogs)
+                Debug.LogWarning("[HudChatCardUI] Content Root não foi configurado.");
+
             return;
         }
 
         if (messagePrefab == null)
         {
-            Debug.LogWarning("[HudChatCardUI] Message Prefab não foi configurado.");
+            if (enableDebugLogs)
+                Debug.LogWarning("[HudChatCardUI] Message Prefab não foi configurado.");
+
             return;
         }
 
         if (message == null)
         {
-            Debug.LogWarning("[HudChatCardUI] Mensagem recebida está nula.");
+            if (enableDebugLogs)
+                Debug.LogWarning("[HudChatCardUI] Mensagem recebida está nula.");
+
             return;
         }
 
@@ -138,14 +136,10 @@ public class HudChatCardUI : MonoBehaviour
         row.Setup(author, text, authorColor);
 
         while (contentRoot.childCount > maxVisibleMessages)
-        {
             Destroy(contentRoot.GetChild(0).gameObject);
-        }
 
         if (scrollToBottom)
-        {
             ScrollToBottom();
-        }
     }
 
     private string ExtractAuthor(ChatMessageData message)
@@ -221,10 +215,11 @@ public class HudChatCardUI : MonoBehaviour
 
     private bool IsPlayerSpeaker(string author, string speakerKey)
     {
-        if (string.IsNullOrWhiteSpace(author) && string.IsNullOrWhiteSpace(speakerKey))
+        string value = !string.IsNullOrWhiteSpace(author) ? author : speakerKey;
+
+        if (string.IsNullOrWhiteSpace(value))
             return false;
 
-        string value = !string.IsNullOrWhiteSpace(author) ? author : speakerKey;
         value = value.Trim().ToLowerInvariant();
 
         return value == "você" ||
@@ -235,10 +230,11 @@ public class HudChatCardUI : MonoBehaviour
 
     private bool IsSystemSpeaker(string author, string speakerKey)
     {
-        if (string.IsNullOrWhiteSpace(author) && string.IsNullOrWhiteSpace(speakerKey))
+        string value = !string.IsNullOrWhiteSpace(author) ? author : speakerKey;
+
+        if (string.IsNullOrWhiteSpace(value))
             return false;
 
-        string value = !string.IsNullOrWhiteSpace(author) ? author : speakerKey;
         value = value.Trim().ToLowerInvariant();
 
         return value == "sistema" ||
@@ -261,9 +257,7 @@ public class HudChatCardUI : MonoBehaviour
         Canvas.ForceUpdateCanvases();
 
         if (scrollRect != null)
-        {
             scrollRect.verticalNormalizedPosition = 0f;
-        }
     }
 
     private void ClearContent()
@@ -272,8 +266,6 @@ public class HudChatCardUI : MonoBehaviour
             return;
 
         for (int i = contentRoot.childCount - 1; i >= 0; i--)
-        {
             Destroy(contentRoot.GetChild(i).gameObject);
-        }
     }
 }

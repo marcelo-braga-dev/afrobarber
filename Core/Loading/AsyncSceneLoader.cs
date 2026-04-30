@@ -21,23 +21,19 @@ public class AsyncSceneLoader : MonoBehaviour
     [Header("Configuração")]
     [SerializeField] private SceneLoadProfile profile = new SceneLoadProfile();
 
-    [Tooltip("Libera assets não usados antes de carregar outra cena. Ajuda em mobile, mas pode causar pequena pausa.")]
     [SerializeField] private bool unloadUnusedAssetsBeforeLoad = true;
-
-    [Tooltip("Executa GC.Collect após Resources.UnloadUnusedAssets. Útil antes de cenas pesadas em mobile.")]
     [SerializeField] private bool collectGarbageBeforeLoad = true;
 
     [Header("Preload")]
     [SerializeField] private List<string> scenesToPreloadOnAwake = new List<string>();
     [SerializeField] private bool preloadOnAwake = true;
-
-    [Tooltip("Se verdadeiro, ao solicitar preload de uma cena nova, remove outras cenas pré-carregadas para economizar memória.")]
     [SerializeField] private bool keepOnlyOnePreloadedScene = true;
 
     [Header("UI de Loading")]
     [SerializeField] private GameObject loadingRoot;
 
     [Header("Debug")]
+    [SerializeField] private bool enableLogs = true;
     [SerializeField] private bool logInEditorOnly = true;
 
     public bool IsLoading { get; private set; }
@@ -60,6 +56,8 @@ public class AsyncSceneLoader : MonoBehaviour
 
     private void Awake()
     {
+        SetLoadingRoot(false);
+
         if (!preloadOnAwake || scenesToPreloadOnAwake == null || scenesToPreloadOnAwake.Count == 0)
             return;
 
@@ -76,11 +74,16 @@ public class AsyncSceneLoader : MonoBehaviour
         StartPreloadQueueIfNeeded();
     }
 
+    private void OnDestroy()
+    {
+        ClearCallbacks();
+    }
+
     public void LoadSceneByName(string sceneName)
     {
         if (string.IsNullOrWhiteSpace(sceneName))
         {
-            Debug.LogWarning("[AsyncSceneLoader] Nome da cena vazio.");
+            LogWarning("Nome da cena vazio.");
             return;
         }
 
@@ -91,7 +94,16 @@ public class AsyncSceneLoader : MonoBehaviour
     public void LoadConfiguredScene()
     {
         if (IsLoading)
+        {
+            LogWarning("Já existe um carregamento em andamento.");
             return;
+        }
+
+        if (string.IsNullOrWhiteSpace(profile.sceneName))
+        {
+            LogWarning("Nenhuma cena configurada para carregar.");
+            return;
+        }
 
         if (TryActivatePreloadedScene(profile.sceneName))
             return;
@@ -123,15 +135,7 @@ public class AsyncSceneLoader : MonoBehaviour
         preloadedOperations.Keys.CopyTo(keys, 0);
 
         for (int i = 0; i < keys.Length; i++)
-        {
-            string sceneName = keys[i];
-            Scene loadedScene = SceneManager.GetSceneByName(sceneName);
-
-            if (loadedScene.IsValid() && loadedScene.isLoaded)
-                SceneManager.UnloadSceneAsync(loadedScene);
-
-            preloadedOperations.Remove(sceneName);
-        }
+            UnloadPreloadedScene(keys[i]);
 
         scheduledPreloads.Clear();
         preloadQueue.Clear();
@@ -152,9 +156,10 @@ public class AsyncSceneLoader : MonoBehaviour
 
         if (loadOperation == null)
         {
-            Debug.LogError($"[AsyncSceneLoader] Não foi possível iniciar o carregamento da cena '{sceneName}'.");
+            LogError($"Não foi possível iniciar o carregamento da cena '{sceneName}'.");
             SetLoadingRoot(false);
             IsLoading = false;
+            loadCoroutine = null;
             yield break;
         }
 
@@ -227,7 +232,7 @@ public class AsyncSceneLoader : MonoBehaviour
 
         if (preloadOperation == null)
         {
-            Log($"Falha ao pré-carregar cena '{sceneName}'.");
+            LogWarning($"Falha ao pré-carregar cena '{sceneName}'.");
             yield break;
         }
 
@@ -268,10 +273,13 @@ public class AsyncSceneLoader : MonoBehaviour
         OnSceneLoaded?.Invoke(sceneName);
 
         IsLoading = false;
+        loadCoroutine = null;
         SetLoadingRoot(false);
 
         if (keepOnlyOnePreloadedScene)
             UnloadAnyOtherPreloadedScenes(sceneName);
+
+        Log($"Cena pré-carregada '{sceneName}' ativada com sucesso.");
     }
 
     private IEnumerator ReleaseMemoryIfNeeded()
@@ -281,6 +289,8 @@ public class AsyncSceneLoader : MonoBehaviour
 
         if (collectGarbageBeforeLoad)
             GC.Collect();
+
+        yield return null;
     }
 
     private void EnqueuePreload(string sceneName)
@@ -338,13 +348,21 @@ public class AsyncSceneLoader : MonoBehaviour
             if (sceneName == keepSceneName)
                 continue;
 
-            Scene loadedScene = SceneManager.GetSceneByName(sceneName);
-
-            if (loadedScene.IsValid() && loadedScene.isLoaded)
-                SceneManager.UnloadSceneAsync(loadedScene);
-
-            preloadedOperations.Remove(sceneName);
+            UnloadPreloadedScene(sceneName);
         }
+    }
+
+    private void UnloadPreloadedScene(string sceneName)
+    {
+        if (string.IsNullOrWhiteSpace(sceneName))
+            return;
+
+        Scene loadedScene = SceneManager.GetSceneByName(sceneName);
+
+        if (loadedScene.IsValid() && loadedScene.isLoaded)
+            SceneManager.UnloadSceneAsync(loadedScene);
+
+        preloadedOperations.Remove(sceneName);
     }
 
     private void SetProgress(float value)
@@ -364,13 +382,44 @@ public class AsyncSceneLoader : MonoBehaviour
             loadingRoot.SetActive(state);
     }
 
+    private void ClearCallbacks()
+    {
+        OnProgressChanged = null;
+        OnSceneLoaded = null;
+    }
+
     private void Log(string message)
     {
+        if (!enableLogs)
+            return;
+
 #if UNITY_EDITOR
         Debug.Log($"[AsyncSceneLoader] {message}");
 #else
         if (!logInEditorOnly)
             Debug.Log($"[AsyncSceneLoader] {message}");
+#endif
+    }
+
+    private void LogWarning(string message)
+    {
+        if (!enableLogs)
+            return;
+
+#if UNITY_EDITOR
+        Debug.LogWarning($"[AsyncSceneLoader] {message}");
+#else
+        if (!logInEditorOnly)
+            Debug.LogWarning($"[AsyncSceneLoader] {message}");
+#endif
+    }
+
+    private void LogError(string message)
+    {
+#if UNITY_EDITOR
+        Debug.LogError($"[AsyncSceneLoader] {message}");
+#else
+        Debug.LogError($"[AsyncSceneLoader] {message}");
 #endif
     }
 }

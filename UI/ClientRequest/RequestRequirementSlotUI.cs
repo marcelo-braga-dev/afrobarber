@@ -12,12 +12,7 @@ public class RequestRequirementSlotUI : MonoBehaviour
     [SerializeField] private Image backgroundImage;
 
     [Header("Cores")]
-    [SerializeField] private Color availableColor = new Color32(35, 45, 55, 255);
-    [SerializeField] private Color missingColor = new Color32(70, 25, 25, 255);
-
-    private ServiceRequirementData requirement;
-    private ClientRequestData requestData;
-    private ClientRequestUI parentUI;
+    [SerializeField] private Color defaultColor = new Color32(35, 45, 55, 255);
 
     public void Setup(
         ClientRequestData request,
@@ -26,36 +21,29 @@ public class RequestRequirementSlotUI : MonoBehaviour
         bool available,
         ClientRequestUI ui)
     {
-        requestData = request;
-        requirement = req;
-        parentUI = ui;
-
         if (productIcon != null)
+        {
             productIcon.sprite = selectedProduct != null ? selectedProduct.icon : null;
+            productIcon.enabled = selectedProduct != null;
+        }
 
         if (checkObject != null)
-            checkObject.SetActive(available);
+            checkObject.SetActive(false);
 
         if (xObject != null)
-            xObject.SetActive(!available);
+            xObject.SetActive(false);
 
         if (tooltipText != null)
-            tooltipText.text = req.GetDisplayName();
+            tooltipText.text = req != null ? req.GetDisplayName() : "";
 
         if (backgroundImage != null)
-            backgroundImage.color = available ? availableColor : missingColor;
+            backgroundImage.color = defaultColor;
 
         if (changeButton != null)
         {
             changeButton.onClick.RemoveAllListeners();
-            changeButton.onClick.AddListener(OnClickChange);
-            changeButton.interactable = available;
+            changeButton.interactable = false;
+            changeButton.gameObject.SetActive(false);
         }
-    }
-
-    private void OnClickChange()
-    {
-        if (parentUI != null && requestData != null && requirement != null)
-            parentUI.OpenSelectionForRequirement(requestData, requirement);
     }
 }
