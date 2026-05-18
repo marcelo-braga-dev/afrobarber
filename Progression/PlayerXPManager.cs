@@ -63,6 +63,9 @@ public class PlayerXPManager : MonoBehaviour
     public UnityEvent<int> OnLevelChanged;
     public UnityEvent<string> OnLevelNameChanged;
 
+    [Header("Debug")]
+    [SerializeField] private bool debugLogs = true;
+
     private const string XPKey = "AFROBARBER_PLAYER_XP";
     private const string LevelKey = "AFROBARBER_PLAYER_LEVEL";
 
@@ -102,6 +105,9 @@ public class PlayerXPManager : MonoBehaviour
     {
         get
         {
+            if (levels == null || levels.Length == 0)
+                return true;
+
             return currentLevel >= levels.Length;
         }
     }
@@ -129,8 +135,13 @@ public class PlayerXPManager : MonoBehaviour
         }
 
         Instance = this;
+
+        PersistentGameObject.MakePersistent(gameObject);
+
         Load();
         ClampLevelValues();
+
+        EmitCurrentState();
     }
 
     public void AddXP(int amount)
@@ -140,7 +151,9 @@ public class PlayerXPManager : MonoBehaviour
 
         if (IsMaxLevel)
         {
-            Debug.Log("[PlayerXPManager] Jogador já está no nível máximo.");
+            if (debugLogs)
+                Debug.Log("[PlayerXPManager] Jogador já está no nível máximo.");
+
             return;
         }
 
@@ -148,13 +161,19 @@ public class PlayerXPManager : MonoBehaviour
 
         while (!IsMaxLevel && currentXP >= XPToNextLevel)
         {
-            currentXP -= XPToNextLevel;
+            int xpRequired = XPToNextLevel;
+
+            if (xpRequired <= 0)
+                break;
+
+            currentXP -= xpRequired;
             currentLevel++;
 
             OnLevelChanged?.Invoke(currentLevel);
             OnLevelNameChanged?.Invoke(CurrentLevelName);
 
-            Debug.Log($"[PlayerXPManager] Subiu para o nível {currentLevel}: {CurrentLevelName}");
+            if (debugLogs)
+                Debug.Log($"[PlayerXPManager] Subiu para o nível {currentLevel}: {CurrentLevelName}");
         }
 
         if (IsMaxLevel)
@@ -164,11 +183,14 @@ public class PlayerXPManager : MonoBehaviour
 
         OnXPChanged?.Invoke(currentXP);
 
-        Debug.Log(
-            $"[PlayerXPManager] XP ganho: {amount}. " +
-            $"Nível: {currentLevel} - {CurrentLevelName}. " +
-            $"XP atual: {currentXP}/{XPToNextLevel}"
-        );
+        if (debugLogs)
+        {
+            Debug.Log(
+                $"[PlayerXPManager] XP ganho: {amount}. " +
+                $"Nível: {currentLevel} - {CurrentLevelName}. " +
+                $"XP atual: {currentXP}/{XPToNextLevel}"
+            );
+        }
     }
 
     public PlayerLevelData GetCurrentLevelData()
@@ -195,12 +217,17 @@ public class PlayerXPManager : MonoBehaviour
         currentXP = 0;
 
         Save();
+        EmitCurrentState();
 
+        if (debugLogs)
+            Debug.Log("[PlayerXPManager] Progresso de XP resetado.");
+    }
+
+    public void EmitCurrentState()
+    {
         OnLevelChanged?.Invoke(currentLevel);
         OnLevelNameChanged?.Invoke(CurrentLevelName);
         OnXPChanged?.Invoke(currentXP);
-
-        Debug.Log("[PlayerXPManager] Progresso de XP resetado.");
     }
 
     private void ClampLevelValues()

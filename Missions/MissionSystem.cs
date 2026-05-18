@@ -43,6 +43,7 @@ public class MissionSystem : MonoBehaviour
             OnMissionDataChanged = new UnityEvent();
 
         PersistentGameObject.MakePersistent(gameObject);
+
         Load();
         EnsureMissionIds();
         RebuildCutCounters();
@@ -53,6 +54,9 @@ public class MissionSystem : MonoBehaviour
 
     public void RegisterServiceCompleted(ClientRequestData request, int earnedMoney, float serviceMinutes)
     {
+        if (stats == null)
+            stats = new MissionStatsState();
+
         stats.totalClientsServed++;
         stats.totalRevenue += Mathf.Max(0, earnedMoney);
         stats.totalServiceMinutes += Mathf.Max(0f, serviceMinutes);
@@ -69,7 +73,9 @@ public class MissionSystem : MonoBehaviour
 
         if (debugLogs)
         {
-            Debug.Log($"[MissionSystem] Serviço registrado | Clientes={stats.totalClientsServed} Receita={stats.totalRevenue} Tempo={stats.totalServiceMinutes:0.0}");
+            Debug.Log(
+                $"[MissionSystem] Serviço registrado | Clientes={stats.totalClientsServed} | Receita={stats.totalRevenue} | Tempo={stats.totalServiceMinutes:0.0}"
+            );
         }
     }
 
@@ -122,7 +128,7 @@ public class MissionSystem : MonoBehaviour
         OnMissionDataChanged?.Invoke();
 
         if (debugLogs)
-            Debug.Log($"[MissionSystem] Recompensa coletada | Missão={mission.title} Tier={entry.tierLabel}");
+            Debug.Log($"[MissionSystem] Recompensa coletada | Missão={mission.title} | Tier={entry.tierLabel}");
 
         return true;
     }
@@ -131,6 +137,9 @@ public class MissionSystem : MonoBehaviour
     {
         if (mission == null)
             return 0;
+
+        if (stats == null)
+            stats = new MissionStatsState();
 
         switch (mission.metricType)
         {
@@ -167,12 +176,14 @@ public class MissionSystem : MonoBehaviour
 
         int current = GetMissionCurrentValue(mission);
         int nextTarget = Mathf.Max(1, mission.tiers[state.claimedTierCount].targetValue);
+
         int previousTarget = state.claimedTierCount <= 0
             ? 0
             : Mathf.Max(0, mission.tiers[state.claimedTierCount - 1].targetValue);
 
         int segmentCurrent = Mathf.Max(0, current - previousTarget);
         int segmentTarget = Mathf.Max(1, nextTarget - previousTarget);
+
         return Mathf.Clamp01((float)segmentCurrent / segmentTarget);
     }
 
@@ -188,6 +199,7 @@ public class MissionSystem : MonoBehaviour
 
         int current = GetMissionCurrentValue(mission);
         int target = Mathf.Max(1, mission.tiers[state.claimedTierCount].targetValue);
+
         return $"{current} / {target}";
     }
 
@@ -214,6 +226,15 @@ public class MissionSystem : MonoBehaviour
         return BuildRewardSummary(mission.tiers[tierIndex]);
     }
 
+    public bool IsMissionCompleted(MissionDefinition mission)
+    {
+        if (mission == null || mission.tiers == null || mission.tiers.Count == 0)
+            return false;
+
+        MissionProgressState state = GetOrCreateState(mission);
+        return state.claimedTierCount >= mission.tiers.Count;
+    }
+
     public bool IsMissionActive(MissionDefinition mission)
     {
         if (mission == null)
@@ -236,6 +257,11 @@ public class MissionSystem : MonoBehaviour
         return true;
     }
 
+    public void ForceRefresh()
+    {
+        OnMissionDataChanged?.Invoke();
+    }
+
     private void GrantRewards(MissionTierDefinition tier, MissionDefinition mission)
     {
         if (tier == null || tier.rewards == null)
@@ -244,34 +270,92 @@ public class MissionSystem : MonoBehaviour
         for (int i = 0; i < tier.rewards.Count; i++)
         {
             MissionRewardDefinition reward = tier.rewards[i];
+
             if (reward == null)
                 continue;
 
             switch (reward.rewardType)
             {
                 case MissionRewardType.Money:
-                    if (FinanceManager.Instance != null)
-                    {
-                        FinanceManager.Instance.AddCashIncome(
-                            $"Missão: {mission.title}",
-                            $"Recompensa da meta {tier.tierLabel}",
-                            Mathf.Max(0, reward.moneyAmount),
-                            FinanceMovementOrigin.Other);
-                    }
+                    GrantMoneyReward(reward, tier, mission);
                     break;
 
                 case MissionRewardType.Item:
-                    if (InventoryManager.Instance != null && reward.itemReward != null)
-                    {
-                        int quantity = Mathf.Max(1, reward.itemAmount);
-                        for (int amount = 0; amount < quantity; amount++)
-                        {
-                            InventoryManager.Instance.AddProduct(reward.itemReward);
-                        }
-                    }
+                    GrantItemReward(reward);
+                    break;
+
+                case MissionRewardType.XP:
+                    GrantXPReward(reward);
                     break;
             }
         }
+    }
+
+    private void GrantMoneyReward(MissionRewardDefinition reward, MissionTierDefinition tier, MissionDefinition mission)
+    {
+        int amount = Mathf.Max(0, reward.moneyAmount);
+
+        if (amount <= 0)
+            return;
+
+        if (FinanceManager.Instance == null)
+        {
+            if (debugLogs)
+                Debug.LogWarning("[MissionSystem] FinanceManager não encontrado. Recompensa em dinheiro não foi aplicada.");
+
+            return;
+        }
+
+        FinanceManager.Instance.AddCashIncome(
+            $"Missão: {mission.title}",
+            $"Recompensa da meta {tier.tierLabel}",
+            amount,
+            FinanceMovementOrigin.Other
+        );
+    }
+
+    private void GrantItemReward(MissionRewardDefinition reward)
+    {
+        if (reward.itemReward == null)
+        {
+            if (debugLogs)
+                Debug.LogWarning("[MissionSystem] Recompensa de item ignorada porque itemReward está vazio.");
+
+            return;
+        }
+
+        if (InventoryManager.Instance == null)
+        {
+            if (debugLogs)
+                Debug.LogWarning("[MissionSystem] InventoryManager não encontrado. Recompensa de item não foi aplicada.");
+
+            return;
+        }
+
+        int quantity = Mathf.Max(1, reward.itemAmount);
+
+        for (int amount = 0; amount < quantity; amount++)
+        {
+            InventoryManager.Instance.AddProduct(reward.itemReward);
+        }
+    }
+
+    private void GrantXPReward(MissionRewardDefinition reward)
+    {
+        int xpAmount = Mathf.Max(0, reward.xpAmount);
+
+        if (xpAmount <= 0)
+            return;
+
+        if (PlayerXPManager.Instance == null)
+        {
+            if (debugLogs)
+                Debug.LogWarning("[MissionSystem] PlayerXPManager não encontrado. Recompensa de XP não foi aplicada.");
+
+            return;
+        }
+
+        PlayerXPManager.Instance.AddXP(xpAmount);
     }
 
     private string BuildRewardSummary(MissionTierDefinition tier)
@@ -284,23 +368,34 @@ public class MissionSystem : MonoBehaviour
         for (int i = 0; i < tier.rewards.Count; i++)
         {
             MissionRewardDefinition reward = tier.rewards[i];
+
             if (reward == null)
                 continue;
 
-            if (reward.rewardType == MissionRewardType.Money)
+            switch (reward.rewardType)
             {
-                parts.Add($"R$ {Mathf.Max(0, reward.moneyAmount)}");
-                continue;
-            }
+                case MissionRewardType.Money:
+                    if (reward.moneyAmount > 0)
+                        parts.Add($"R$ {Mathf.Max(0, reward.moneyAmount)}");
+                    break;
 
-            if (reward.rewardType == MissionRewardType.Item && reward.itemReward != null)
-            {
-                int amount = Mathf.Max(1, reward.itemAmount);
-                string itemName = string.IsNullOrWhiteSpace(reward.itemReward.productName)
-                    ? reward.itemReward.productId
-                    : reward.itemReward.productName;
+                case MissionRewardType.XP:
+                    if (reward.xpAmount > 0)
+                        parts.Add($"{Mathf.Max(0, reward.xpAmount)} XP");
+                    break;
 
-                parts.Add($"{itemName} x{amount}");
+                case MissionRewardType.Item:
+                    if (reward.itemReward != null)
+                    {
+                        int amount = Mathf.Max(1, reward.itemAmount);
+
+                        string itemName = string.IsNullOrWhiteSpace(reward.itemReward.productName)
+                            ? reward.itemReward.productId
+                            : reward.itemReward.productName;
+
+                        parts.Add($"{itemName} x{amount}");
+                    }
+                    break;
             }
         }
 
@@ -321,6 +416,7 @@ public class MissionSystem : MonoBehaviour
         }
 
         MissionProgressState state;
+
         if (!missionStateById.TryGetValue(missionId, out state))
         {
             state = new MissionProgressState
@@ -338,11 +434,15 @@ public class MissionSystem : MonoBehaviour
 
     private void EnsureMissionIds()
     {
+        if (missions == null)
+            missions = new List<MissionDefinition>();
+
         HashSet<string> ids = new HashSet<string>();
 
         for (int i = 0; i < missions.Count; i++)
         {
             MissionDefinition mission = missions[i];
+
             if (mission == null)
                 continue;
 
@@ -358,20 +458,31 @@ public class MissionSystem : MonoBehaviour
 
     private bool ValidatePeriodResets()
     {
+        if (missions == null)
+            return false;
+
         DateTime nowUtc = DateTime.UtcNow;
         bool hasReset = false;
 
         for (int i = 0; i < missions.Count; i++)
         {
             MissionDefinition mission = missions[i];
+
             if (mission == null)
                 continue;
 
-            if (mission.scheduleType == MissionScheduleType.Permanent || mission.scheduleType == MissionScheduleType.EventWindow)
+            if (mission.scheduleType == MissionScheduleType.Permanent ||
+                mission.scheduleType == MissionScheduleType.EventWindow)
+            {
                 continue;
+            }
 
             MissionProgressState state = GetOrCreateState(mission);
-            long anchorTicks = state.periodAnchorTicks > 0 ? state.periodAnchorTicks : nowUtc.Ticks;
+
+            long anchorTicks = state.periodAnchorTicks > 0
+                ? state.periodAnchorTicks
+                : nowUtc.Ticks;
+
             DateTime anchor = new DateTime(anchorTicks, DateTimeKind.Utc);
             bool shouldReset = false;
 
@@ -385,7 +496,11 @@ public class MissionSystem : MonoBehaviour
 
             state.claimedTierCount = 0;
             state.periodAnchorTicks = nowUtc.Ticks;
+
             hasReset = true;
+
+            if (debugLogs)
+                Debug.Log($"[MissionSystem] Missão resetada por período: {mission.title}");
         }
 
         return hasReset;
@@ -393,6 +508,8 @@ public class MissionSystem : MonoBehaviour
 
     private void TrimHistory()
     {
+        maxHistoryEntries = Mathf.Max(1, maxHistoryEntries);
+
         if (history.Count <= maxHistoryEntries)
             return;
 
@@ -402,8 +519,18 @@ public class MissionSystem : MonoBehaviour
 
     private void Save()
     {
+        if (stats == null)
+            stats = new MissionStatsState();
+
+        if (stats.cutCounts == null)
+            stats.cutCounts = new List<StringIntPair>();
+
         stats.cutCounts = cutCounters
-            .Select(pair => new StringIntPair { key = pair.Key, value = pair.Value })
+            .Select(pair => new StringIntPair
+            {
+                key = pair.Key,
+                value = Mathf.Max(0, pair.Value)
+            })
             .ToList();
 
         MissionSaveData save = new MissionSaveData
@@ -432,7 +559,20 @@ public class MissionSystem : MonoBehaviour
             return;
         }
 
-        MissionSaveData save = JsonUtility.FromJson<MissionSaveData>(json);
+        MissionSaveData save = null;
+
+        try
+        {
+            save = JsonUtility.FromJson<MissionSaveData>(json);
+        }
+        catch (Exception exception)
+        {
+            if (debugLogs)
+                Debug.LogWarning($"[MissionSystem] Falha ao carregar save das missões. Um novo estado será criado. Erro: {exception.Message}");
+
+            stats = new MissionStatsState();
+            return;
+        }
 
         if (save == null)
         {
@@ -442,11 +582,15 @@ public class MissionSystem : MonoBehaviour
 
         stats = save.stats ?? new MissionStatsState();
 
+        if (stats.cutCounts == null)
+            stats.cutCounts = new List<StringIntPair>();
+
         if (save.missions != null)
         {
             for (int i = 0; i < save.missions.Count; i++)
             {
                 MissionProgressState state = save.missions[i];
+
                 if (state == null || string.IsNullOrWhiteSpace(state.missionId))
                     continue;
 
@@ -462,8 +606,11 @@ public class MissionSystem : MonoBehaviour
     {
         cutCounters.Clear();
 
+        if (stats == null)
+            stats = new MissionStatsState();
+
         if (stats.cutCounts == null)
-            return;
+            stats.cutCounts = new List<StringIntPair>();
 
         for (int i = 0; i < stats.cutCounts.Count; i++)
         {
