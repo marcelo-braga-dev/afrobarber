@@ -1,0 +1,37 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1eeab403edf2ea541a333e18d65775b0, type: 3}
+  m_Name: HighFade_Request
+  m_EditorClassIdentifier: Assembly-CSharp::ClientRequestData
+  id: HighFade_Request
+  requestId: HighFade_Request
+  requestName: High Fade
+  icon: {fileID: 21300000, guid: cbe0fe0e87cbfd740bf1d7b8cc78841a, type: 3}
+  description: "O High Fade possui um degrad\xEA alto que come\xE7a pr\xF3ximo ao
+    topo da cabe\xE7a, deixando as laterais bem raspadas e destacando o cabelo superior."
+  haircutType: 0
+  serviceType: 0
+  customServiceId: 
+  additionalServiceTypes: 
+  servicePrice: 30
+  serviceTime: 10
+  difficulty: 1
+  priceTable: {fileID: 11400000, guid: 24504ec38018014428d057cf832d353a, type: 2}
+  xpReward: 10
+  requiredItems: []
+  beforeHairId: 
+  afterHairId: 
+  afroCutId: 
+  historyTitle: 
+  historySummary: "Esse estilo nasceu das barbearias militares americanas e depois
+    foi incorporado pela cultura hip-hop nos anos 1980 e 1990. Tornou-se s\xEDmbolo
+    de visual moderno, limpo e agressivo."

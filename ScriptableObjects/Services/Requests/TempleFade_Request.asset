@@ -10,19 +10,21 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 1eeab403edf2ea541a333e18d65775b0, type: 3}
-  m_Name: Request_FadeAfro
+  m_Name: TempleFade_Request
   m_EditorClassIdentifier: Assembly-CSharp::ClientRequestData
-  id: fade_afro
-  requestId: fade_afro
-  requestName: Fade Afro
-  icon: {fileID: 0}
-  description: Cliente quer um fade afro bem definido.
+  id: TempleFade_Request
+  requestId: TempleFade_Request
+  requestName: Temple Fade
+  icon: {fileID: 21300000, guid: f27b19bed81ddc749a2ca4ca750f86e3, type: 3}
+  description: "O Temple Fade \xE9 um degrad\xEA concentrado principalmente na regi\xE3o
+    da t\xEAmpora e nuca, mantendo mais cabelo nas laterais."
   haircutType: 0
   serviceType: 0
   customServiceId: 
+  additionalServiceTypes: 
   servicePrice: 30
   serviceTime: 10
-  difficulty: 1
+  difficulty: 2
   priceTable: {fileID: 11400000, guid: 24504ec38018014428d057cf832d353a, type: 2}
   xpReward: 15
   requiredItems:
@@ -44,6 +46,6 @@ MonoBehaviour:
   afterHairId: fade_afro
   afroCutId: fade_afro
   historyTitle: Origem do Fade Afro
-  historySummary: "Resumo da Hist\xF3ria...\nResumo da Hist\xF3ria...\nResumo da
-    Hist\xF3ria...\nResumo da Hist\xF3ria...\nResumo da Hist\xF3ria...\nResumo da
-    Hist\xF3ria...\nResumo da Hist\xF3ria...\nResumo da Hist\xF3ria..."
+  historySummary: "Tamb\xE9m conhecido como \u201CBrooklyn Fade\u201D, surgiu em
+    Nova York nas comunidades afro-americanas e latinas durante os anos 1980, tornando-se
+    muito associado ao hip-hop cl\xE1ssico."

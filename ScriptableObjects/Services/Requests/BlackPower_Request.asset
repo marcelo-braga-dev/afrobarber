@@ -1,0 +1,38 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1eeab403edf2ea541a333e18d65775b0, type: 3}
+  m_Name: BlackPower_Request
+  m_EditorClassIdentifier: Assembly-CSharp::ClientRequestData
+  id: BlackPower_Request
+  requestId: BlackPower_Request
+  requestName: Black Power
+  icon: {fileID: 21300000, guid: 2623299f320bee2459fb67b8bd6070d6, type: 3}
+  description: "O Black Power Grande \xE9 marcado pelo volume alto, formato arredondado
+    e valoriza\xE7\xE3o m\xE1xima da textura natural do cabelo crespo."
+  haircutType: 0
+  serviceType: 0
+  customServiceId: 
+  additionalServiceTypes: 
+  servicePrice: 30
+  serviceTime: 10
+  difficulty: 3
+  priceTable: {fileID: 0}
+  xpReward: 50
+  requiredItems: []
+  beforeHairId: 
+  afterHairId: 
+  afroCutId: 
+  historyTitle: 
+  historySummary: "O corte se tornou um s\xEDmbolo hist\xF3rico do movimento \u201CBlack
+    is Beautiful\u201D, ligado \xE0 valoriza\xE7\xE3o da cultura negra, orgulho racial
+    e resist\xEAncia pol\xEDtica durante os anos 1960 e 1970. \xCDcones da m\xFAsica,
+    esporte e ativismo ajudaram a eternizar o visual no mundo inteiro."

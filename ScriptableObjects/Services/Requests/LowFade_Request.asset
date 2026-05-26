@@ -1,0 +1,37 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1eeab403edf2ea541a333e18d65775b0, type: 3}
+  m_Name: LowFade_Request
+  m_EditorClassIdentifier: Assembly-CSharp::ClientRequestData
+  id: LowFade_Request
+  requestId: LowFade_Request
+  requestName: Low Fade
+  icon: {fileID: 21300000, guid: 047b189eeaa58a04bb4a84ad8541cb34, type: 3}
+  description: "O Low Fade \xE9 um degrad\xEA discreto que come\xE7a mais baixo,
+    pr\xF3ximo da orelha e nuca, trazendo um visual elegante e natural."
+  haircutType: 0
+  serviceType: 0
+  customServiceId: 
+  additionalServiceTypes: 
+  servicePrice: 30
+  serviceTime: 10
+  difficulty: 1
+  priceTable: {fileID: 11400000, guid: 24504ec38018014428d057cf832d353a, type: 2}
+  xpReward: 10
+  requiredItems: []
+  beforeHairId: 
+  afterHairId: 
+  afroCutId: 
+  historyTitle: 
+  historySummary: "Derivado dos cortes militares cl\xE1ssicos, o Low Fade ficou famoso
+    nas barbearias modernas por combinar com praticamente qualquer tipo de cabelo
+    e estilo social ou urbano."

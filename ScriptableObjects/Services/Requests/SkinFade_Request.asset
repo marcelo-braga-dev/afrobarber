@@ -1,0 +1,37 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1eeab403edf2ea541a333e18d65775b0, type: 3}
+  m_Name: SkinFade_Request
+  m_EditorClassIdentifier: Assembly-CSharp::ClientRequestData
+  id: SkinFade_Request
+  requestId: SkinFade_Request
+  requestName: Skin Fade
+  icon: {fileID: 21300000, guid: a23af91825a2fef4180653e06825719f, type: 3}
+  description: "O Skin Fade \xE9 um degrad\xEA que vai at\xE9 \u201Cna pele\u201D,
+    criando uma transi\xE7\xE3o extremamente limpa entre o cabelo e o couro cabeludo."
+  haircutType: 0
+  serviceType: 0
+  customServiceId: 
+  additionalServiceTypes: 
+  servicePrice: 30
+  serviceTime: 10
+  difficulty: 1
+  priceTable: {fileID: 11400000, guid: 24504ec38018014428d057cf832d353a, type: 2}
+  xpReward: 10
+  requiredItems: []
+  beforeHairId: 
+  afterHairId: 
+  afroCutId: 
+  historyTitle: 
+  historySummary: "Inspirado nos cortes militares e adaptado pelas barbearias modernas,
+    o Skin Fade virou tend\xEAncia mundial por transmitir limpeza, sofistica\xE7\xE3o
+    e alto n\xEDvel t\xE9cnico do barbeiro."

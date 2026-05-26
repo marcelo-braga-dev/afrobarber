@@ -13,5 +13,12 @@ MonoBehaviour:
   m_Name: MainClientRequestDatabase
   m_EditorClassIdentifier: Assembly-CSharp::ClientRequestDatabase
   requests:
+  - {fileID: 11400000, guid: 53220e45618ed5849be2087e22172352, type: 2}
+  - {fileID: 11400000, guid: 383f89e49e1d456458aeb4d540fd4517, type: 2}
   - {fileID: 11400000, guid: f9582213625cc0a43b9346f17a7e8b91, type: 2}
+  - {fileID: 11400000, guid: 2194a376a5af0ff4f970b1b0053ee5f0, type: 2}
+  - {fileID: 11400000, guid: e750ff1c40e8a9645a7dfe904e9d2002, type: 2}
+  - {fileID: 11400000, guid: bc789613a80721547bc268fda267fdd9, type: 2}
+  - {fileID: 11400000, guid: 6a609d754d1277e44b3505d6a9f18882, type: 2}
+  - {fileID: 11400000, guid: 5a14216b3b8503149ba4097c270f65b1, type: 2}
   - {fileID: 11400000, guid: f7347dde21e2bc449a3b785ec379f43d, type: 2}
