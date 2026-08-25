@@ -55,8 +55,9 @@ Ribeirão Preto — SP, 2026
 | Módulo | Módulo I — R$ 20.000,00 |
 | Segmento cultural predominante | Audiovisual (com forte diálogo temático com Cultura de Matrizes Africanas) |
 | Eixo de trabalho | Criação, desenvolvimento, preservação e difusão cultural por meio da linguagem dos jogos eletrônicos |
-| Natureza da ação | Continuidade e ampliação de obra cultural digital interativa já em desenvolvimento, acompanhada de ação de formação e difusão cultural presencial |
+| Natureza da ação | Continuidade e ampliação de obra cultural digital interativa já em desenvolvimento avançado, acompanhada de ação de formação e difusão cultural presencial |
 | Formato | Jogo eletrônico para dispositivos móveis, acompanhado de ação cultural presencial gratuita em Ribeirão Preto |
+| Motor e ferramentas | Unity 6000.3.10, com pipeline gráfico HDRP/URP, New Input System e Unity Test Framework |
 | Duração prevista de execução | Até 10 (dez) meses, contados do recebimento do recurso |
 | Classificação etária | Livre |
 | Público-alvo (resumo) | Crianças, adolescentes, jovens e adultos interessados em cultura, tecnologia e jogos eletrônicos, com atenção prioritária à população negra e a públicos com menor acesso a bens culturais digitais |
@@ -67,11 +68,11 @@ Ribeirão Preto — SP, 2026
 
 ## 2. Resumo Executivo
 
-AfroBarber Game é uma obra cultural digital interativa, desenvolvida em Unity, que utiliza a linguagem dos jogos eletrônicos para valorizar, preservar e difundir a história, a estética e a identidade da cultura negra, tendo como universo narrativo e visual a barbearia e a cultura dos cabelos afro. O projeto não parte do zero: já possui uma base técnica e artística substancial, com **175 scripts de programação**, aproximadamente **22.900 linhas de código**, **62 bancos de dados estruturados** (ScriptableObjects) e um **sistema educativo-cultural já ativo**, com seis estilos de cabelo pesquisados e redigidos em três camadas de conteúdo — descrição de jogabilidade, contexto histórico e significado cultural.
+AfroBarber Game é uma obra cultural digital interativa, desenvolvida em Unity, que utiliza a linguagem dos jogos eletrônicos para valorizar, preservar e difundir a história, a estética e a identidade da cultura negra, tendo como universo narrativo e visual a barbearia e a cultura dos cabelos afro. O projeto não parte do zero: já é um produto em estágio avançado de desenvolvimento, com um loop de jogabilidade completo e documentado em 22 etapas, uma **Biblioteca Educativa com 25 cortes afro** contendo lore histórico e cultural completo, um sistema de progressão do jogador em 5 níveis, maestria por corte, arcos narrativos com personagens fixos e uma arquitetura técnica organizada em mais de 20 domínios de sistema (atendimento, economia, progressão, missões, educação cultural, entre outros).
 
-A presente proposta destina os R$ 20.000,00 do Módulo I à ampliação dessa obra, com três frentes centrais: (1) a criação do módulo **"Museu AfroBarber"**, um sistema de memória cultural integrado à progressão do jogo; (2) a **expansão do conteúdo cultural e artístico** já existente (novos estilos, personagens e melhorias de acessibilidade); e (3) uma **ação cultural presencial e gratuita** em Ribeirão Preto, de apresentação e experimentação do jogo, cumprindo a contrapartida obrigatória do edital e promovendo a democratização do acesso a bens culturais digitais.
+A presente proposta destina os R$ 20.000,00 do Módulo I à ampliação e qualificação cultural dessa obra, com quatro frentes centrais: (1) a criação do módulo **"Museu AfroBarber"**, um sistema de memória cultural construído sobre a Biblioteca Educativa já existente; (2) a **efetivação do sistema de eventos culturais** dentro do gameplay, hoje implementado mas sem efeito real sobre a experiência; (3) a **viabilização técnica do build mobile**, resolvendo a incompatibilidade de materiais entre os pipelines gráficos HDRP e URP, condição necessária para que o jogo funcione no formato exigido pelo edital; e (4) uma **ação cultural presencial e gratuita** em Ribeirão Preto, cumprindo a contrapartida obrigatória e promovendo a democratização do acesso a bens culturais digitais.
 
-O principal diferencial estratégico da proposta é a **maturidade técnica do projeto**: como a arquitetura de dados do sistema educativo (banco de cortes, progresso de desbloqueio) já está implementada e funcional, o investimento se concentra em ampliação de conteúdo e experiência, e não em construção de infraestrutura básica — o que reduz significativamente o risco de execução e aumenta a relação custo/benefício do recurso público.
+O principal diferencial estratégico da proposta é a **maturidade técnica e cultural do projeto**: a base de conteúdo (25 cortes com lore completo), a arquitetura de progressão e os sistemas narrativos já existem e estão documentados internamente (README técnico e documentação de arquitetura do projeto). O investimento se concentra, portanto, em transformar conteúdo e sistemas já produzidos em experiência cultural acessível ao público — e não em construir uma base do zero — o que reduz significativamente o risco de execução e aumenta a relação custo/benefício do recurso público.
 
 ---
 
@@ -81,7 +82,7 @@ O AfroBarber Game parte da compreensão da barbearia como um espaço que ultrapa
 
 O projeto utiliza o jogo eletrônico não apenas como entretenimento, mas como meio de criação, fruição e difusão de conteúdo cultural, aproximando a cultura negra de públicos que já possuem familiaridade com a linguagem digital e com os jogos — sobretudo crianças, adolescentes e jovens, para quem grande parte do contato cotidiano com conteúdo cultural ocorre hoje por meio de dispositivos digitais.
 
-Diferentemente de uma proposta em estágio conceitual, o AfroBarber Game já possui um **protótipo funcional e testável**, com sistemas completos de atendimento ao cliente, gestão de recursos, loja, inventário, progressão, reputação, missões e educação cultural. Esta proposta tem como finalidade dar continuidade a esse desenvolvimento, ampliando o conteúdo cultural, a qualidade artística e a capacidade de diálogo da obra com o público, e transformando o protótipo existente em uma experiência mais consistente, acessível e culturalmente fundamentada.
+Diferentemente de uma proposta em estágio conceitual, o AfroBarber Game já possui um **protótipo funcional e testável**, com sistemas completos de atendimento ao cliente (loop de 22 etapas, da chegada à saída), gestão financeira, progressão do jogador, fidelidade e maestria por corte, missões narrativas, sistema social simulado e uma Biblioteca Educativa com 25 cortes afro documentados. Essa proposta tem como finalidade dar continuidade a esse desenvolvimento, concentrando o investimento público na camada cultural mais visível ao público — o Museu AfroBarber — e na resolução de pendências técnicas específicas e já mapeadas pela própria equipe de desenvolvimento, o que evidencia planejamento e maturidade de engenharia.
 
 ---
 
@@ -89,23 +90,23 @@ Diferentemente de uma proposta em estágio conceitual, o AfroBarber Game já pos
 
 O projeto será inscrito no segmento **Audiovisual**, conforme a classificação estabelecida pelo edital, que contempla "mídias e produções com elementos visuais e auditivos", incluindo filmes, vídeos, produções televisivas, animações, entre outros. A escolha do segmento está relacionada à natureza audiovisual interativa do jogo eletrônico, que reúne elementos visuais, sonoros, narrativos, gráficos, animações e interação em tempo real.
 
-O projeto possui, ainda, forte diálogo temático com o segmento **Cultura de Matrizes Africanas**, definido pelo edital como práticas culturais, crenças e tradições com origens nas culturas africanas, preservadas e adaptadas no Brasil. Essa dimensão constitui um dos principais eixos conceituais e temáticos da obra, expressa tanto no universo narrativo quanto no conteúdo do sistema educativo-cultural já desenvolvido (ver Seção 10).
+O projeto possui, ainda, forte diálogo temático com o segmento **Cultura de Matrizes Africanas**, definido pelo edital como práticas culturais, crenças e tradições com origens nas culturas africanas, preservadas e adaptadas no Brasil. Essa dimensão constitui um dos principais eixos conceituais e temáticos da obra, expressa tanto no universo narrativo (arcos de missões com personagens fixos ligados à barbearia e à comunidade) quanto no conteúdo já produzido da Biblioteca Educativa de 25 cortes (ver Seção 10).
 
 ---
 
 ## 5. Eixos Conceituais
 
 ### 5.1 Memória
-Pesquisar e representar referências relacionadas à evolução dos cabelos e penteados negros e sua presença em diferentes contextos históricos e sociais.
+Pesquisar e representar referências relacionadas à evolução dos cabelos e penteados negros e sua presença em diferentes contextos históricos e sociais — eixo já materializado na Biblioteca Educativa de 25 cortes e que será expandido e apresentado ao público por meio do Museu AfroBarber.
 
 ### 5.2 Identidade
-Apresentar o cabelo e a estética como formas de expressão individual e coletiva, valorizando diferentes possibilidades de representação da população negra.
+Apresentar o cabelo e a estética como formas de expressão individual e coletiva, valorizando diferentes possibilidades de representação da população negra, inclusive por meio dos arcos narrativos com personagens fixos já estruturados no jogo.
 
 ### 5.3 Cultura
 Relacionar os elementos presentes no jogo a referências culturais, sociais e históricas, evitando que os penteados sejam apresentados apenas como elementos estéticos.
 
 ### 5.4 Tecnologia e Novos Públicos
-Utilizar a linguagem dos jogos digitais para aproximar conteúdos culturais de públicos que possuem forte relação com celulares, jogos e tecnologias digitais.
+Utilizar a linguagem dos jogos digitais — incluindo mecânicas de progressão, maestria, missões e interação social simulada, já presentes no jogo — para aproximar conteúdos culturais de públicos que possuem forte relação com celulares, jogos e tecnologias digitais.
 
 ---
 
@@ -115,7 +116,7 @@ O desenvolvimento do AfroBarber Game parte da percepção de que a cultura tamb�
 
 A temática dos cabelos negros foi escolhida por sua relevância simbólica e cultural: diferentes estilos e penteados carregam referências históricas, sociais e identitárias, constituindo formas de expressão que participam da construção da autoestima, do pertencimento e da representação. A barbearia é utilizada como espaço narrativo por reunir personagens, histórias, conversas, transformações visuais e relações comunitárias em um ambiente reconhecível e cotidiano.
 
-A continuidade do projeto também se justifica pelo fato de já existir uma **base de desenvolvimento consolidada e testável**, permitindo que os recursos do edital sejam direcionados principalmente à qualificação e ampliação de uma obra em processo — o que aumenta a relação custo/benefício do investimento público e reduz o risco técnico de execução dentro do prazo do Módulo I.
+A continuidade do projeto também se justifica pelo fato de já existir uma **base de desenvolvimento consolidada, testável e tecnicamente documentada** — incluindo um mapeamento interno preciso do que falta ajustar (ver Seção 10.2) — permitindo que os recursos do edital sejam direcionados de forma cirúrgica à qualificação cultural e à correção de pendências específicas de uma obra em processo. Isso aumenta a relação custo/benefício do investimento público e reduz o risco técnico de execução dentro do prazo do Módulo I.
 
 ---
 
@@ -128,15 +129,15 @@ Dar continuidade ao desenvolvimento do AfroBarber Game, ampliando uma obra cultu
 ## 8. Objetivos Específicos
 
 1. Dar continuidade ao desenvolvimento técnico e artístico do AfroBarber Game.
-2. Criar o módulo "Museu AfroBarber", sistema de memória cultural integrado à progressão do jogo.
-3. Ampliar o conteúdo cultural relacionado à história dos cabelos, penteados e estética negra, com pesquisa e curadoria dedicadas.
-4. Desenvolver novos elementos visuais, personagens e conteúdos interativos.
-5. Valorizar diferentes representações da estética e identidade negra.
-6. Implementar recursos de acessibilidade que ampliem as possibilidades de fruição da obra.
-7. Otimizar a experiência mobile do protótipo.
+2. Criar o módulo "Museu AfroBarber", sistema de memória cultural construído sobre a Biblioteca Educativa de 25 cortes já existente.
+3. Efetivar o sistema de eventos culturais do jogo, hoje implementado sem efeito real de jogabilidade, conectando-o a bônus e narrativas culturais concretas.
+4. Viabilizar tecnicamente a versão mobile do jogo, resolvendo a incompatibilidade de materiais entre os pipelines gráficos HDRP e URP.
+5. Desenvolver novos elementos visuais, personagens e conteúdos interativos vinculados ao Museu AfroBarber.
+6. Valorizar diferentes representações da estética e identidade negra, inclusive por meio dos arcos narrativos já estruturados no jogo.
+7. Implementar recursos de acessibilidade que ampliem as possibilidades de fruição da obra.
 8. Realizar uma ação cultural gratuita de apresentação, experimentação e difusão do projeto em Ribeirão Preto.
 9. Promover o contato da população com processos de criação de jogos e produção cultural digital.
-10. Disponibilizar uma versão atualizada do protótipo para experimentação pública, gratuita, por no mínimo 1 (um) ano.
+10. Disponibilizar uma versão mobile atualizada e testada do protótipo para experimentação pública, gratuita, por no mínimo 1 (um) ano.
 11. Registrar e documentar o processo de desenvolvimento e as ações realizadas.
 12. Contribuir para a descentralização do acesso a bens culturais digitais no município.
 
@@ -147,7 +148,7 @@ Dar continuidade ao desenvolvimento do AfroBarber Game, ampliando uma obra cultu
 O projeto terá como público:
 
 - crianças, adolescentes, jovens e adultos;
-- jogadores e interessados em jogos eletrônicos;
+- jogadores e interessados em jogos eletrônicos, incluindo públicos afeitos a mecânicas de progressão, maestria e narrativa;
 - estudantes e pessoas interessadas em tecnologia e criação digital;
 - artistas e produtores culturais;
 - pessoas interessadas em cultura negra e matrizes africanas;
@@ -160,23 +161,43 @@ A linguagem do projeto será planejada para permitir que uma pessoa sem conhecim
 
 ## 10. Diagnóstico Técnico — O que já existe
 
-Um dos pontos centrais desta proposta é demonstrar, de forma objetiva e verificável, que o AfroBarber Game não é um conceito inicial, mas um **produto cultural digital em estágio avançado de desenvolvimento**, com histórico documentado de evolução contínua. O quadro abaixo resume o estado técnico atual do projeto, levantado diretamente do repositório de desenvolvimento.
+Um dos pontos centrais desta proposta é demonstrar, de forma objetiva e verificável, que o AfroBarber Game não é um conceito inicial, mas um **produto cultural digital em estágio avançado de desenvolvimento**, com arquitetura documentada, histórico de evolução contínua e mapeamento interno das próprias pendências técnicas — o que é evidência direta de maturidade de gestão de projeto.
+
+### 10.1 Arquitetura e sistemas já implementados
 
 | Indicador técnico | Situação atual |
 |---|---|
-| Scripts de programação (C#) | 175 scripts organizados em 20+ módulos de domínio (Barbershop, Characters, Economy, Education, Energy, Evaluation, Inventory, Missions, NPC, Products, Queue, Reputation, Services, UI, entre outros) |
-| Linhas de código | Aproximadamente 22.900 linhas |
-| Bancos de dados estruturados (ScriptableObjects) | 62 ativos, incluindo bancos de produtos, pedidos de serviço, preços e conteúdo educativo-cultural |
-| Categorias de produtos da loja | 9 categorias já modeladas com itens e imagens reais cadastradas (máquinas de corte, tesouras, pentes, navalhas, lâminas, produtos capilares, secadores, mobília, decoração) |
-| Sistema de atendimento | Fluxo completo: chegada, fila, espera com reserva de assento, atendimento avançado por etapas (lavar, cortar, finalizar), avaliação de qualidade, pagamento e saída |
-| Sistema educativo-cultural | Banco de dados ativo com 6 estilos de cabelo já pesquisados e redigidos, cada um com descrição de jogabilidade, contexto histórico e significado cultural |
-| Sistemas complementares já implementados | Missões (com painel, histórico e estatísticas), gestão da barbearia com sistema de salvamento, reputação, avaliação de atendimento, energia/cansaço, diálogo global e HUD de chat contextual |
-| Telas de interface (UI) distintas | 16 módulos de tela implementados (HUD, Loja, Inventário, Fila, Financeiro, Educação, Avaliação, Histórico, Missões, Gestão, Pedido do Cliente, Painel do Jogador, entre outros) |
-| Histórico de desenvolvimento documentado | 45 versões de desenvolvimento registradas entre abril e maio de 2026, evidenciando produção contínua e capacidade real de execução |
+| Motor e pipeline gráfico | Unity 6000.3.10, com HDRP 17.3.0 e URP 17.3.0 coexistindo no projeto |
+| Input | New Input System 1.18.0 (padronizado em todo o projeto) |
+| Testes automatizados | Unity Test Framework 1.6.0 |
+| Controle de versão | Plastic SCM (principal) + Git (documentação e histórico público) |
+| Organização de código | Scripts organizados por domínio em mais de 20 pastas (Appointment, Barbershop, Characters, City, Core, Dialogue, Economy, Education, Energy, Evaluation, Gameplay, Inventory, Missions, NPC, Progression, Queue, Reputation, Services, Social, UI, Utilities) |
+| Orquestração de inicialização | `GameBootstrap` inicializa managers em sequência antes de liberar a interface; todos os managers persistem entre cenas |
+| Loop de atendimento ao cliente | Fluxo documentado em 22 etapas — do nascimento do cliente no spawn até a liberação do slot para o próximo atendimento — com máquina de estados de 10 estágios por cliente |
+| Progressão do jogador | 5 níveis (Aprendiz → Barbeiro de Bairro → Profissional → Mestre do Degradê → Lenda AfroBarber) |
+| Maestria cultural por corte | Sistema de 5 tiers de maestria por corte, com bônus reais de qualidade e recompensa, aplicado aos 25 cortes da Biblioteca Educativa |
+| Biblioteca Educativa | 25 cortes afro documentados com lore histórico e cultural completo, com sistema de desbloqueio, favoritos e progresso |
+| Sistemas narrativos e sociais | Missões narrativas com 5 personagens fixos e 3 capítulos cada; sistema de fidelidade de clientes; rede social simulada pós-atendimento (BarberBook) |
+| Sistemas de gestão e economia | Sistema financeiro canônico, empréstimos com juros, contas mensais, clientes VIP, agendamentos multi-dia, clima dinâmico afetando demanda |
+| Sistema de reincidência de jogo (retenção) | Desafios diários, sistema de New Game+ com perks permanentes (Prestige System) |
+| Interface | 16 painéis de tela geridos por um `GameUIManager` central |
+| Mapeamento interno de pendências | Débito técnico documentado item a item pela própria equipe, com plano de correção definido (ver 10.2) |
 
-### 10.1 Conteúdo cultural já pesquisado e redigido
+### 10.2 Pendências técnicas já mapeadas — base para o escopo deste edital
 
-O sistema educativo do jogo já contém seis estilos culturais integralmente pesquisados e redigidos, cada um estruturado em três camadas de conteúdo — a mesma estrutura que será utilizada e ampliada no módulo Museu AfroBarber:
+A equipe de desenvolvimento já identificou e documentou internamente as lacunas técnicas do projeto. Isso permite que esta proposta destine o recurso do edital a correções **específicas, escopadas e de baixo risco**, em vez de trabalho especulativo:
+
+| Pendência identificada | Relevância para este edital |
+|---|---|
+| Sistema de eventos culturais (`CulturalEventSystem`) calcula bônus, mas nunca os aplica de fato ao atendimento | Item 3 do escopo financiado (Seção 11) — é a pendência tecnicamente mais alinhada ao objeto cultural do edital |
+| Materiais do pipeline HDRP aparecem rosa/incorretos em builds do pipeline URP, usado para mobile | Item central do escopo financiado — impacta diretamente a entrega do "formato: jogo para dispositivos móveis" exigido pelo edital |
+| Sistema de missões por marcos não é acionado no fluxo avançado de atendimento | Fora do escopo direto deste edital — não afeta a entrega cultural prioritária, mas será registrado no relatório técnico final |
+| Bônus de XP do sistema de prestígio não é aplicado à progressão | Fora do escopo direto deste edital |
+| Sistema de conquistas funciona internamente, mas não tem tela/popup para o jogador | Fora do escopo direto deste edital |
+
+### 10.3 Conteúdo cultural já pesquisado e redigido
+
+A Biblioteca Educativa do jogo contém 25 cortes afro documentados, cada um estruturado com descrição de jogabilidade, contexto histórico e significado cultural. A tabela abaixo apresenta uma amostra já verificada, com o texto efetivamente presente no banco de dados do jogo:
 
 | Estilo já catalogado | Camadas de conteúdo já desenvolvidas |
 |---|---|
@@ -187,7 +208,9 @@ O sistema educativo do jogo já contém seis estilos culturais integralmente pes
 | Dreads / Locs | Descrição de jogabilidade, contexto histórico (força simbólica contemporânea) e significado cultural (espiritualidade e autonomia estética) |
 | Twists | Descrição de jogabilidade, contexto histórico e significado cultural (cuidado, versatilidade e valorização da textura afro) |
 
-> **Nota:** o conteúdo integral (textos completos) constará no Portfólio AfroBarber Game anexado à inscrição, com prints do sistema em funcionamento, conforme exigido pelo item 8.4-h do edital.
+Os 19 cortes restantes da Biblioteca Educativa seguem a mesma estrutura de conteúdo, conforme a documentação técnica interna do projeto (CLAUDE.md).
+
+> **Nota:** o conteúdo integral (textos completos dos 25 cortes) constará no Portfólio AfroBarber Game anexado à inscrição, com prints do sistema em funcionamento, conforme exigido pelo item 8.4-h do edital. Recomenda-se extrair essas evidências diretamente do projeto Unity/Plastic SCM atual, fonte primária do desenvolvimento, e não apenas do espelho público em Git.
 
 ---
 
@@ -197,23 +220,23 @@ A tabela a seguir delimita com precisão o que já existe e o que será desenvol
 
 | Já existe (não custeado por este edital) | Será realizado com os R$ 20.000,00 |
 |---|---|
-| Loop completo de atendimento, fila, espera e avaliação | Módulo "Museu AfroBarber" integrado à progressão do jogo (Seção 12) |
-| Loja com 9 categorias de produtos e itens cadastrados | Pesquisa e redação de novos estilos culturais (meta inicial: 6 novos, ampliando o banco atual de 6 para ao menos 12 — sujeito a validação técnica) |
-| Sistema financeiro, energia e reputação | Criação de novos personagens/clientes com pedidos e diálogos próprios (meta inicial: 3 novos NPCs) |
-| Sistema de missões e gestão da barbearia | Novos elementos visuais e de cenário vinculados ao Museu AfroBarber |
-| Banco educativo-cultural com 6 estilos já pesquisados | Implementação de recursos de acessibilidade (Seção 15) |
-| Sistema de diálogo global e HUD de chat | Otimização e ajustes de experiência mobile |
-| Arquitetura de dados (ScriptableObjects) para conteúdo cultural | Testes, ajustes e nova versão pública do protótipo |
-| 175 scripts e ~22.900 linhas de código já escritas | Ação cultural presencial gratuita em Ribeirão Preto (Seção 13) |
+| Loop completo de atendimento (22 etapas) e progressão do jogador (5 níveis) | Módulo "Museu AfroBarber" construído sobre a Biblioteca Educativa de 25 cortes (Seção 12) |
+| Biblioteca Educativa com 25 cortes afro documentados | Curadoria, expansão e apresentação didática desse conteúdo dentro do Museu AfroBarber |
+| Sistema de maestria por corte, fidelidade de clientes e missões narrativas | Efetivação do sistema de eventos culturais (`CulturalEventSystem`), hoje sem efeito real de gameplay |
+| Sistema financeiro, VIP, empréstimos, clima dinâmico e agendamentos | Correção da compatibilidade de materiais HDRP/URP e testes em dispositivo real, viabilizando o build mobile |
+| Rede social simulada (BarberBook) e sistema de desafios diários | Novos elementos visuais vinculados ao Museu AfroBarber |
+| Arquitetura de dados já validada para conteúdo cultural (Biblioteca Educativa) | Implementação de recursos de acessibilidade (Seção 15) |
+| Documentação técnica interna completa (arquitetura, APIs, débito técnico) | Testes, ajustes e nova versão pública e mobile do protótipo |
+| Histórico de desenvolvimento documentado e versionado | Ação cultural presencial gratuita em Ribeirão Preto (Seção 13) |
 | — | Documentação do processo e plano de divulgação (Seções 16 e 20) |
 
-Essa separação evidencia o argumento central de viabilidade da proposta: como a arquitetura de dados do sistema educativo já existe e está em funcionamento (`AfroCutDatabase` e `EducationProgressManager`), o Museu AfroBarber **não exige a construção de uma infraestrutura técnica nova** — apenas a ampliação de uma camada de interface e conteúdo sobre uma base já validada. Isso reduz significativamente o risco técnico do projeto dentro do orçamento e do prazo do Módulo I.
+Essa separação evidencia o argumento central de viabilidade da proposta: como a Biblioteca Educativa e sua arquitetura de dados já existem e estão em funcionamento, o Museu AfroBarber **não exige a construção de uma infraestrutura técnica nova** — apenas a ampliação de uma camada de interface e curadoria sobre uma base já validada. Da mesma forma, a efetivação do `CulturalEventSystem` e a correção do build mobile são **correções pontuais sobre sistemas que já existem**, não desenvolvimentos do zero. Isso reduz significativamente o risco técnico do projeto dentro do orçamento e do prazo do Módulo I.
 
 ---
 
 ## 12. Museu AfroBarber — Sistema de Memória Cultural
 
-O Museu AfroBarber será uma área digital dedicada à contextualização dos conteúdos culturais presentes no jogo, construída sobre o sistema educativo já existente. A progressão do jogador passará a possibilitar, de forma natural, o contato com novos conteúdos culturais à medida que avança na experiência.
+O Museu AfroBarber será uma área digital dedicada à contextualização dos conteúdos culturais presentes no jogo, construída sobre a Biblioteca Educativa de 25 cortes já existente. A progressão do jogador — incluindo o sistema de maestria por corte já implementado — passará a possibilitar, de forma natural, o contato com novos conteúdos culturais à medida que avança na experiência.
 
 ### 12.1 Estrutura de cada entrada do Museu
 
@@ -222,7 +245,13 @@ O Museu AfroBarber será uma área digital dedicada à contextualização dos co
 - Descrição de jogabilidade;
 - Referências históricas (contexto, período, origem);
 - Significado cultural (identidade, resistência, pertencimento);
-- Conteúdo complementar (curiosidades, referências).
+- Conteúdo complementar (curiosidades, referências, conexões com os arcos narrativos do jogo).
+
+### 12.2 Integração com os sistemas já existentes
+
+- **Maestria por corte:** o avanço nos 5 tiers de maestria de cada corte poderá desbloquear camadas adicionais de conteúdo cultural no Museu.
+- **Missões narrativas:** os 5 personagens fixos e seus arcos de 3 capítulos poderão ancorar parte do conteúdo do Museu em histórias e vivências, e não apenas em fichas técnicas de estilo.
+- **Eventos culturais:** a efetivação do `CulturalEventSystem` (Seção 11) passará a conectar datas e eventos culturais reais a conteúdos e bônus dentro do Museu.
 
 Essa funcionalidade será desenvolvida de maneira compatível com o orçamento do Módulo I, priorizando recursos digitais e conteúdos integrados ao protótipo já existente, sem necessidade de aquisição de equipamentos.
 
@@ -239,9 +268,9 @@ A atividade apresentará:
 - a concepção do AfroBarber Game;
 - o processo de desenvolvimento do jogo;
 - a relação entre jogos eletrônicos e cultura;
-- a representação da identidade negra na obra;
-- referências culturais relacionadas aos cabelos e penteados afro;
-- demonstração do protótipo e do Museu AfroBarber;
+- a representação da identidade negra na obra, inclusive por meio dos arcos narrativos do jogo;
+- referências culturais relacionadas aos cabelos e penteados afro, extraídas da Biblioteca Educativa e do Museu AfroBarber;
+- demonstração do protótipo mobile e do Museu AfroBarber;
 - experimentação livre do jogo pelo público;
 - conversa aberta sobre produção cultural e tecnologia.
 
@@ -254,13 +283,13 @@ A ação será realizada em espaço situado no município de Ribeirão Preto, co
 A estratégia de formação de público será baseada em três frentes:
 
 ### 14.1 Acesso digital
-Disponibilização gratuita do protótipo atualizado para experimentação do público, por, no mínimo, 1 (um) ano a partir do lançamento, em conformidade com o item 5.4 do edital.
+Disponibilização gratuita do protótipo mobile atualizado para experimentação do público, por, no mínimo, 1 (um) ano a partir do lançamento, em conformidade com o item 5.4 do edital.
 
 ### 14.2 Acesso presencial
 Realização de atividade cultural gratuita em Ribeirão Preto, com prioridade de alcance a públicos com menor acesso a bens culturais digitais.
 
 ### 14.3 Mediação cultural
-Apresentação do processo criativo e dos conteúdos culturais, permitindo que o público compreenda não apenas o jogo, mas também as referências culturais que fundamentam sua criação.
+Apresentação do processo criativo e dos conteúdos culturais, permitindo que o público compreenda não apenas o jogo, mas também as referências culturais que fundamentam sua criação — incluindo os arcos narrativos e a Biblioteca Educativa.
 
 Dessa maneira, o projeto busca atingir simultaneamente público gamer, público jovem, comunidade artística, interessados em tecnologia e pessoas interessadas na cultura negra — ampliando o diálogo entre linguagens digitais e patrimônio cultural afro-brasileiro.
 
@@ -271,11 +300,11 @@ Dessa maneira, o projeto busca atingir simultaneamente público gamer, público 
 ### 15.1 Na experiência digital
 
 - Textos com tamanho e contraste adequados à leitura;
-- Linguagem clara e tutorial simplificado;
+- Linguagem clara e tutorial simplificado (o jogo já conta com um `TutorialController`, a ser revisado sob a ótica de acessibilidade);
 - Identificação visual reforçada dos elementos interativos;
 - Legendas para conteúdos audiovisuais do Museu AfroBarber;
 - Redução da dependência exclusiva de informações sonoras;
-- Interface organizada e controles simplificados, compatíveis com uso mobile;
+- Interface organizada e controles simplificados, compatíveis com uso mobile e com o New Input System;
 - Recursos que favoreçam a compreensão do conteúdo por pessoas neurodivergentes.
 
 ### 15.2 Na ação presencial
@@ -294,8 +323,8 @@ Dessa maneira, o projeto busca atingir simultaneamente público gamer, público 
 |---|---|---|
 | 1 | Apresentação | Divulgação da aprovação/início do projeto e apresentação da proposta ao público |
 | 2 | Bastidores | Publicações mostrando o desenvolvimento: arte, personagens, pesquisa e construção do jogo |
-| 3 | Conteúdo cultural | Publicações apresentando informações sobre cabelos, estética e cultura negra, extraídas do Museu AfroBarber |
-| 4 | Demonstração | Divulgação da ação cultural presencial e da oportunidade de experimentação do protótipo |
+| 3 | Conteúdo cultural | Publicações apresentando informações sobre cabelos, estética e cultura negra, extraídas da Biblioteca Educativa e do Museu AfroBarber |
+| 4 | Demonstração | Divulgação da ação cultural presencial e da oportunidade de experimentação do protótipo mobile |
 | 5 | Resultado | Apresentação da versão final desenvolvida e dos resultados do projeto |
 
 Todo material de divulgação incluirá a régua de logos do FMC-RP, a classificação etária indicativa e o texto obrigatório: *"Projeto incentivado pelo Fundo Municipal de Cultura de Ribeirão Preto por meio do Edital Cultura em Ação — Programa Municipal de Fomento às Culturas"*, conforme itens 16.1 a 16.5 do edital. Os materiais produzidos também servirão como documentação da execução do projeto.
@@ -308,15 +337,15 @@ Prazo máximo de execução: até 10 (dez) meses a partir do recebimento da parc
 
 | Mês | Atividades | Entrega/Marco |
 |---|---|---|
-| 1 | Planejamento detalhado, definição final de escopo técnico e pesquisa cultural aprofundada dos novos estilos | Plano técnico validado |
-| 2 | Pesquisa e redação do conteúdo cultural dos novos estilos (contexto histórico e significado cultural) | Conteúdo textual revisado |
-| 3 | Desenvolvimento técnico do módulo Museu AfroBarber (estrutura e integração com o sistema educativo existente) | Museu AfroBarber — versão funcional inicial |
-| 4 | Criação artística dos novos elementos visuais e personagens | Novos assets visuais produzidos |
-| 5 | Integração dos novos estilos, personagens e conteúdo ao protótipo | Build interna atualizada |
-| 6 | Implementação dos recursos de acessibilidade e otimização mobile | Build com acessibilidade implementada |
-| 7 | Testes internos, ajustes de usabilidade e correções | Relatório de testes |
+| 1 | Planejamento detalhado, definição final de escopo técnico e curadoria da Biblioteca Educativa para o Museu | Plano técnico validado |
+| 2 | Desenvolvimento da estrutura do módulo Museu AfroBarber, integrado à Biblioteca Educativa e à maestria por corte | Museu AfroBarber — versão funcional inicial |
+| 3 | Correção da compatibilidade de materiais HDRP/URP para viabilizar o build mobile | Build mobile de teste sem erros de material |
+| 4 | Efetivação do sistema de eventos culturais (`CulturalEventSystem`) conectado ao Museu e ao atendimento | Eventos culturais com efeito real no jogo |
+| 5 | Criação artística dos novos elementos visuais do Museu AfroBarber | Novos assets visuais produzidos |
+| 6 | Implementação dos recursos de acessibilidade | Build com acessibilidade implementada |
+| 7 | Testes internos em dispositivo mobile, ajustes de usabilidade e correções | Relatório de testes em device |
 | 8 | Preparação da ação cultural: definição de local, materiais e plano de divulgação | Local confirmado e materiais prontos |
-| 9 | Realização da ação cultural presencial e disponibilização pública do protótipo atualizado | Ação cultural realizada + protótipo publicado |
+| 9 | Realização da ação cultural presencial e disponibilização pública do protótipo mobile atualizado | Ação cultural realizada + protótipo publicado |
 | 10 | Documentação final, sistematização de resultados e elaboração do relatório de prestação de contas | Relatório final entregue |
 
 > **Nota:** este cronograma segue o modelo de referência do Anexo X do edital e deve ser replicado no formulário/planilha oficial de inscrição.
@@ -325,13 +354,14 @@ Prazo máximo de execução: até 10 (dez) meses a partir do recebimento da parc
 
 ## 18. Orçamento — R$ 20.000,00
 
-O orçamento a seguir foi estruturado em blocos compatíveis com o perfil do Módulo I (projetos de baixo investimento em equipamentos), priorizando desenvolvimento, criação artística, pesquisa cultural, acessibilidade e difusão. Os valores individuais são uma proposta de referência e devem ser validados com os profissionais/fornecedores reais antes da submissão final.
+O orçamento a seguir foi estruturado em blocos compatíveis com o perfil do Módulo I (projetos de baixo investimento em equipamentos), priorizando desenvolvimento, correção técnica pontual, criação artística, acessibilidade e difusão. Os valores individuais são uma proposta de referência e devem ser validados com os profissionais/fornecedores reais antes da submissão final.
 
 | Item | Categoria | Valor (R$) | % do total |
 |---|---|---|---|
-| Desenvolvimento técnico (programação de novos sistemas e integração do Museu AfroBarber) | Serviços | 7.000,00 | 35% |
-| Criação artística (novos personagens, penteados, ambientes e elementos visuais) | Serviços | 5.000,00 | 25% |
-| Pesquisa e curadoria de conteúdo cultural (história, estética e significado dos novos estilos) | Serviços | 2.500,00 | 12,5% |
+| Desenvolvimento do Museu AfroBarber e efetivação do sistema de eventos culturais | Serviços | 6.000,00 | 30% |
+| Correção de compatibilidade mobile (HDRP/URP) e testes em dispositivo real | Serviços | 3.000,00 | 15% |
+| Criação artística (elementos visuais do Museu AfroBarber e personagens complementares) | Serviços | 4.000,00 | 20% |
+| Curadoria e expansão de conteúdo cultural (revisão e ampliação da Biblioteca Educativa e do Museu) | Serviços | 1.500,00 | 7,5% |
 | Implementação e testes de acessibilidade | Serviços | 1.500,00 | 7,5% |
 | Ação cultural presencial (espaço, materiais e logística) | Difusão | 1.500,00 | 7,5% |
 | Plano de divulgação (peças gráficas, teaser em vídeo, redes sociais) | Difusão | 1.000,00 | 5% |
@@ -352,9 +382,9 @@ A ficha técnica final deve conter nome completo, CPF, endereço e função de c
 | Nome | CPF | Função no projeto | Reside em RP? | Currículo resumido |
 |---|---|---|---|---|
 | [a preencher] | [a preencher] | Direção / coordenação geral / game design | [S/N] | até 20 linhas — anexar |
-| [a preencher] | [a preencher] | Programação / desenvolvimento | [S/N] | até 20 linhas — anexar |
+| [a preencher] | [a preencher] | Programação / desenvolvimento (Unity, correção HDRP/URP) | [S/N] | até 20 linhas — anexar |
 | [a preencher] | [a preencher] | Criação artística / arte visual | [S/N] | até 20 linhas — anexar |
-| [a preencher] | [a preencher] | Pesquisa e curadoria cultural | [S/N] | até 20 linhas — anexar |
+| [a preencher] | [a preencher] | Curadoria e pesquisa cultural | [S/N] | até 20 linhas — anexar |
 | [a preencher] | [a preencher] | Produção / divulgação | [S/N] | até 20 linhas — anexar |
 
 > **Nota:** não infle a equipe artificialmente: o edital pontua a compatibilidade entre currículo e função (critério e, até 12 pontos). Inclua apenas quem de fato exercerá cada papel.
@@ -365,14 +395,16 @@ A ficha técnica final deve conter nome completo, CPF, endereço e função de c
 
 O portfólio completo (anexado separadamente à inscrição) reunirá evidências datadas e contextualizadas do desenvolvimento do AfroBarber Game, incluindo:
 
-- capturas de tela de todos os sistemas em funcionamento (loja, inventário, atendimento, fila, missões, educação cultural);
-- vídeo de demonstração do protótipo em execução;
-- textos completos dos 6 estilos culturais já pesquisados e redigidos no sistema educativo;
-- histórico de desenvolvimento (linha do tempo com as principais entregas técnicas, abril–maio de 2026);
-- descrição arquitetural do projeto (módulos, sistemas e organização técnica);
+- capturas de tela de todos os sistemas em funcionamento (atendimento, progressão, maestria, missões narrativas, Biblioteca Educativa, sistema social e financeiro);
+- vídeo de demonstração do protótipo em execução, incluindo o loop completo de atendimento;
+- textos completos dos 25 cortes culturais já pesquisados e redigidos na Biblioteca Educativa;
+- histórico de desenvolvimento (linha do tempo com as principais entregas técnicas);
+- descrição arquitetural do projeto (módulos, sistemas e organização técnica, com base na documentação técnica interna);
 - registros de testes internos do protótipo.
 
 Cada evidência será apresentada com data e contexto, evitando a apresentação descontextualizada de imagens ou links vedada pelo item 8.4-h do edital, e demonstrando de forma objetiva o histórico e a capacidade de realização do proponente/concorrente.
+
+> **Nota:** como o projeto é versionado principalmente em Plastic SCM, com o Git usado para documentação, recomenda-se extrair as capturas de tela, vídeos e textos diretamente do projeto Unity ativo — garantindo que o portfólio reflita fielmente o estado mais atual do jogo no momento da inscrição.
 
 ---
 
@@ -380,13 +412,13 @@ Cada evidência será apresentada com data e contexto, evitando a apresentação
 
 | Nº | Meta | Indicador de verificação |
 |---|---|---|
-| 01 | Desenvolver uma nova versão ampliada do protótipo do AfroBarber Game | Build publicada e disponível para download/experimentação |
-| 02 | Implementar o módulo Museu AfroBarber | Módulo funcional integrado ao jogo, com entradas culturais navegáveis |
-| 03 | Ampliar o banco cultural com novos estilos pesquisados e redigidos | Novos registros no banco de dados educativo-cultural |
-| 04 | Criar novos personagens e conteúdos interativos | Novos NPCs/pedidos integrados ao jogo |
+| 01 | Desenvolver uma nova versão mobile testada do protótipo do AfroBarber Game | Build mobile publicada e disponível para download/experimentação |
+| 02 | Implementar o módulo Museu AfroBarber sobre a Biblioteca Educativa existente | Módulo funcional integrado ao jogo, com entradas culturais navegáveis |
+| 03 | Efetivar o sistema de eventos culturais com impacto real de gameplay | `CulturalEventSystem` aplicando bônus e conteúdo real durante o jogo |
+| 04 | Corrigir a compatibilidade de materiais HDRP/URP | Build mobile sem erros visuais de material |
 | 05 | Implementar melhorias de acessibilidade | Recursos de acessibilidade ativos e testados na versão final |
 | 06 | Realizar 1 (uma) ação cultural gratuita em Ribeirão Preto | Registro fotográfico/audiovisual e lista de presença |
-| 07 | Disponibilizar o protótipo para experimentação pública por, no mínimo, 1 ano | Link ativo e monitorado |
+| 07 | Disponibilizar o protótipo mobile para experimentação pública por, no mínimo, 1 ano | Link/build ativo e monitorado |
 | 08 | Produzir registro e documentação da execução | Materiais de documentação anexados ao relatório final |
 | 09 | Executar plano de divulgação digital em 5 fases | Publicações realizadas em cada fase |
 | 10 | Elaborar relatório final com resultados alcançados | Relatório entregue à CMIC/FMC-RP |
@@ -395,18 +427,18 @@ Cada evidência será apresentada com data e contexto, evitando a apresentação
 
 ## 22. Diferencial Cultural
 
-O principal diferencial do AfroBarber Game está na utilização da linguagem dos jogos eletrônicos como ferramenta de criação e fruição cultural. A proposta não pretende simplesmente inserir personagens negros em um jogo — pretende construir uma experiência na qual:
+O principal diferencial do AfroBarber Game está na utilização da linguagem dos jogos eletrônicos — incluindo mecânicas já maduras de progressão, maestria e narrativa — como ferramenta de criação e fruição cultural. A proposta não pretende simplesmente inserir personagens negros em um jogo — pretende construir uma experiência na qual:
 
-> **estética → interação → descoberta → conhecimento → ampliação da relação do público com a cultura**
+> **estética → interação → maestria → descoberta → conhecimento → ampliação da relação do público com a cultura**
 
-Dessa maneira, o projeto busca transformar elementos cotidianos — como cabelo, penteado e barbearia — em portas de entrada para discussões sobre identidade, memória, representação e cultura negra, unindo entretenimento, tecnologia e educação cultural em uma única experiência interativa e gratuita.
+Dessa maneira, o projeto busca transformar elementos cotidianos — como cabelo, penteado e barbearia — em portas de entrada para discussões sobre identidade, memória, representação e cultura negra, unindo entretenimento, tecnologia e educação cultural em uma única experiência interativa, mobile e gratuita.
 
 ---
 
 ## 23. Declarações e Conformidade com o Edital
 
 - O AfroBarber Game não foi anteriormente financiado pelo Fundo Municipal de Cultura de Ribeirão Preto; o desenvolvimento realizado até o momento foi autofinanciado/independente, não havendo, portanto, obrigatoriedade do Relatório de Continuidade previsto no item 8.3 do edital, embora a proposta seja apresentada como continuidade natural de um processo de criação já iniciado.
-- O protótipo/versão ampliada será mantida disponível gratuitamente para o público por, no mínimo, 1 (um) ano após o lançamento, em conformidade com o item 5.4 do edital.
+- O protótipo/versão mobile ampliada será mantido disponível gratuitamente para o público por, no mínimo, 1 (um) ano após o lançamento, em conformidade com o item 5.4 do edital.
 - O proponente é o autor/detentor dos direitos autorais da obra ou possui licença sobre eles, nos termos da Lei Federal nº 9.610/1998, conforme exigido pelo item 14.9 do edital.
 - Nenhuma despesa prevista no orçamento se refere a equipamentos, em conformidade com o perfil do Módulo I.
 - Todas as ações presenciais previstas ocorrerão no território do Município de Ribeirão Preto, conforme item 5.6.
@@ -425,12 +457,13 @@ Este pré-projeto está estruturalmente completo, mas depende das seguintes defi
 5. Reunir currículos resumidos (até 20 linhas) de cada integrante da ficha técnica.
 6. Validar valores do orçamento com fornecedores/profissionais reais, mantendo o total em R$ 20.000,00 — Seção 18.
 7. Definir e confirmar o local da ação cultural presencial; solicitar carta de anuência, se necessário — Seção 13.
-8. Montar o Portfólio AfroBarber Game com capturas de tela, vídeo de demonstração e textos culturais já produzidos, todos datados e contextualizados — Seção 20.
+8. Montar o Portfólio AfroBarber Game com capturas de tela, vídeo de demonstração e os 25 textos culturais já produzidos, todos datados e contextualizados, extraídos diretamente do projeto Unity/Plastic SCM atual — Seção 20.
 9. Verificar enquadramento em indutores afirmativos (autodeclaração, quando aplicável) para pontuação extra de até 6 pontos.
 10. Preencher a Declaração de Fato Impeditivo (Pessoa Física ou Jurídica) no formulário de inscrição.
 11. Preencher a Declaração de opção de cessão de direitos autorais (Anexo IV).
 12. Preparar planilha orçamentária no modelo oficial do Anexo XI e cronograma no modelo oficial do Anexo X.
 13. Revisar o limite de 20 Mb por arquivo enviado na plataforma CriArte.
 14. Confirmar a decisão final sobre o segmento cultural predominante (Audiovisual, conforme adotado nesta proposta).
+15. Validar em dispositivo mobile real a correção de compatibilidade HDRP/URP antes de declarar a build final como pronta para divulgação pública.
 
-**Recomenda-se iniciar, em seguida, o levantamento visual do jogo (capturas de tela e vídeo) para a montagem do Portfólio — item com maior peso relativo (24 pontos entre capacidade de realização e qualificação da equipe) ainda pendente de evidência documental completa.**
+**Recomenda-se iniciar, em seguida, o levantamento visual do jogo (capturas de tela e vídeo, extraídas do projeto Unity ativo) para a montagem do Portfólio — item com maior peso relativo (24 pontos entre capacidade de realização e qualificação da equipe) ainda pendente de evidência documental completa.**
